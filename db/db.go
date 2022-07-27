@@ -17,11 +17,11 @@ func Connect() *sqlx.DB {
 		log.Fatalln(err)
 	}
 
+	log.Println("Successfully connected to the database")
+
 	if err := migrateDB(db); err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println("Successfully connected to the database")
 
 	return db
 }
@@ -40,7 +40,7 @@ func migrateDB(db *sqlx.DB) error {
 	}
 
 	if err := m.Up(); err != nil {
-		return err
+		log.Print("Migrations: ", err)
 	}
 
 	return nil
