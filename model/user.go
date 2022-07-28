@@ -32,6 +32,15 @@ type UserInput struct {
 	Password string `json:"password"`
 }
 
+type UserUpdateInput struct {
+	Username    *string
+	Email       *string
+	Password    *string
+	Kind        *UserKind
+	DisplayName *string
+	Bio         *string
+}
+
 func HashPassword(password string) string {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
