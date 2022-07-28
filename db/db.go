@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -31,8 +32,9 @@ func migrateDB(db *sqlx.DB) error {
 	if err != nil {
 		return err
 	}
+
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://db/migrations",
+		fmt.Sprintf("file://%s", os.Getenv("MIGRATIONS_PATH")),
 		"postgres", driver,
 	)
 	if err != nil {
@@ -40,7 +42,12 @@ func migrateDB(db *sqlx.DB) error {
 	}
 
 	if err := m.Up(); err != nil {
-		log.Print("Migrations: ", err)
+		if err == migrate.ErrNoChange {
+			log.Println("No DB migration was necessary")
+			return nil
+		}
+
+		return err
 	}
 
 	return nil
