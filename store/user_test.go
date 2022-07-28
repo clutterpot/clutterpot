@@ -25,9 +25,7 @@ func testUserStore_Create(t *testing.T, s *Store) {
 		Email:    "test_" + model.NewID() + "@example.com",
 		Password: "Password1!",
 	})
-
 	require.NoError(t, err, "cannot create user")
-
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
 }
 
@@ -40,12 +38,14 @@ func testUserStore_Update(t *testing.T, s *Store) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
 
+	_, err = s.User.Update(user.ID, &model.UserUpdateInput{})
+	assert.EqualError(t, err, "user input cannot be empty", "'user input cannot be empty' error should have been returned")
+
 	username := "test_" + model.NewID()
 
 	updatedUser, err := s.User.Update(user.ID, &model.UserUpdateInput{
 		Username: &username,
 	})
-
 	require.NoError(t, err, "cannot update user")
 	assert.Equal(t, username, updatedUser.Username, "username should have been updated")
 }
@@ -71,6 +71,8 @@ func testUserStore_GetByID(t *testing.T, s *Store) {
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
 
 	_, err = s.User.GetByID(user.ID)
-
 	require.NoError(t, err, "cannot get user by id")
+
+	_, err = s.User.GetByID(model.NewID())
+	require.Error(t, err, "'no rows in result set' error should have been returned")
 }
