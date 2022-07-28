@@ -12,8 +12,8 @@ type User struct {
 	Username    string
 	Email       string
 	Kind        UserKind
-	DisplayName string
-	Bio         string
+	DisplayName *string
+	Bio         *string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
