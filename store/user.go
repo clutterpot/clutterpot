@@ -39,7 +39,7 @@ func (us *userStore) Update(id string, input *model.UserUpdateInput) (*model.Use
 	query := sq.Update("users").Set("updated_at", "now()")
 
 	if *input == (model.UserUpdateInput{}) {
-		return nil, fmt.Errorf("user input cannot be empty")
+		return nil, fmt.Errorf("user update input cannot be empty")
 	}
 	if input.Username != nil {
 		query = query.Set("username", *input.Username)

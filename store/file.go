@@ -1,6 +1,8 @@
 package store
 
 import (
+	"fmt"
+
 	"github.com/clutterpot/clutterpot/model"
 
 	sq "github.com/Masterminds/squirrel"
@@ -31,6 +33,28 @@ func (fs *fileStore) Create(input *model.FileInput) (*model.File, error) {
 	return &f, nil
 }
 
+func (fs *fileStore) Update(id string, input *model.FileUpdateInput) (*model.File, error) {
+	var f model.File
+
+	query := sq.Update("files").Set("updated_at", "now()")
+
+	if *input == (model.FileUpdateInput{}) {
+		return nil, fmt.Errorf("file update input cannot be empty")
+	}
+	if input.Name != nil {
+		query = query.Set("name", *input.Name)
+	}
+
+	if err := query.Where("id = ?", id).
+		Suffix("RETURNING id, name, mime_type, extension, size, created_at, updated_at, deleted_at").
+		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
+		Scan(&f.ID, &f.Name, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
+		return nil, err
+	}
+
+	return &f, nil
+}
+
 func (fs *fileStore) Delete(id string) error {
 	if _, err := sq.Delete("files").Where("id = ?", id).
 		PlaceholderFormat(sq.Dollar).RunWith(fs.db).Query(); err != nil {
@@ -38,4 +62,17 @@ func (fs *fileStore) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func (fs *fileStore) GetByID(id string) (*model.File, error) {
+	var f model.File
+
+	if err := sq.Select("id", "name", "mime_type", "extension", "size", "created_at", "updated_at", "deleted_at").
+		From("files").Where("id = ?", id).
+		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
+		Scan(&f.ID, &f.Name, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
+		return nil, err
+	}
+
+	return &f, nil
 }

@@ -39,13 +39,15 @@ func testUserStore_Update(t *testing.T, s *Store) {
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
 
 	_, err = s.User.Update(user.ID, &model.UserUpdateInput{})
-	assert.EqualError(t, err, "user input cannot be empty", "'user input cannot be empty' error should have been returned")
+	assert.EqualError(t, err, "user update input cannot be empty", "'user update input cannot be empty' error should have been returned")
 
 	username := "test_" + model.NewID()
 
 	updatedUser, err := s.User.Update(user.ID, &model.UserUpdateInput{Username: &username})
 	require.NoError(t, err, "cannot update user")
 	assert.Equal(t, username, updatedUser.Username, "username should have been updated")
+	assert.Equal(t, user.CreatedAt, updatedUser.CreatedAt, "user created at should not have been updated")
+	assert.NotEqual(t, user.UpdatedAt, updatedUser.UpdatedAt, "user updated at should have been updated")
 }
 
 func testUserStore_Delete(t *testing.T, s *Store) {

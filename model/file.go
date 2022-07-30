@@ -16,3 +16,7 @@ type File struct {
 type FileInput struct {
 	Name string
 }
+
+type FileUpdateInput struct {
+	Name *string
+}
