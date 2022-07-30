@@ -9,5 +9,5 @@ import (
 func Execute() {
 	fmt.Println("Clutterpot")
 
-	app.New().Init()
+	app.New().Init().Run()
 }
