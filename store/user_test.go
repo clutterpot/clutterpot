@@ -43,9 +43,7 @@ func testUserStore_Update(t *testing.T, s *Store) {
 
 	username := "test_" + model.NewID()
 
-	updatedUser, err := s.User.Update(user.ID, &model.UserUpdateInput{
-		Username: &username,
-	})
+	updatedUser, err := s.User.Update(user.ID, &model.UserUpdateInput{Username: &username})
 	require.NoError(t, err, "cannot update user")
 	assert.Equal(t, username, updatedUser.Username, "username should have been updated")
 }

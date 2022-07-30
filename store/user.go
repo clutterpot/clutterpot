@@ -13,9 +13,7 @@ type userStore struct {
 	db *sqlx.DB
 }
 
-func newUserStore(db *sqlx.DB) *userStore {
-	return &userStore{db: db}
-}
+func newUserStore(db *sqlx.DB) *userStore { return &userStore{db: db} }
 
 func (us *userStore) Create(input *model.UserInput) (*model.User, error) {
 	var u model.User
@@ -73,11 +71,8 @@ func (us *userStore) Update(id string, input *model.UserUpdateInput) (*model.Use
 }
 
 func (us *userStore) Delete(id string) error {
-	if _, err := sq.Delete("users").
-		Where("id = ?", id).
-		PlaceholderFormat(sq.Dollar).
-		RunWith(us.db).
-		Query(); err != nil {
+	if _, err := sq.Delete("users").Where("id = ?", id).
+		PlaceholderFormat(sq.Dollar).RunWith(us.db).Query(); err != nil {
 		return err
 	}
 
