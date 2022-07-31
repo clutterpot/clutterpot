@@ -16,3 +16,7 @@ func New(store *store.Store) *Resolver { return &Resolver{Store: store} }
 type queryResolver struct{ *Resolver }
 
 func (r *Resolver) Query() server.QueryResolver { return &queryResolver{r} }
+
+type userResolver struct{ *Resolver }
+
+func (r *Resolver) User() server.UserResolver { return &userResolver{r} }
