@@ -23,6 +23,7 @@ func TestUserResolvers(t *testing.T) {
 
 	t.Run("User", func(t *testing.T) { testUserResolvers_User(t, gqlClient, store) })
 	t.Run("CreateUser", func(t *testing.T) { testUserResolvers_CreateUser(t, gqlClient, store) })
+	t.Run("UpdateUser", func(t *testing.T) { testUserResolvers_UpdateUser(t, gqlClient, store) })
 }
 
 func testUserResolvers_User(t *testing.T, c *client.Client, s *store.Store) {
@@ -76,4 +77,34 @@ func testUserResolvers_CreateUser(t *testing.T, c *client.Client, s *store.Store
 	}))
 	require.NoError(t, err, "cannot create user")
 	defer func() { require.NoError(t, s.User.Delete(resp.CreateUser.ID)) }()
+}
+
+func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store) {
+	user, err := s.User.Create(&model.UserInput{
+		Username: "test_" + model.NewID(),
+		Email:    "test_" + model.NewID() + "@example.com",
+		Password: "Password1!",
+	})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
+
+	query := `
+	mutation updateUser($id: ID!, $input: UserUpdateInput!) {
+		updateUser(id: $id, input: $input) {
+			username
+		}
+	}
+	`
+
+	username := "test_" + model.NewID()
+	var resp struct {
+		UpdateUser struct {
+			Username string
+		}
+	}
+	err = c.Post(query, &resp, client.Var("id", user.ID), client.Var("input", map[string]string{
+		"username": username,
+	}))
+	require.NoError(t, err, "cannot update user")
+	assert.Equal(t, username, resp.UpdateUser.Username, "username should have been updated")
 }

@@ -20,7 +20,3 @@ func (r *Resolver) Query() server.QueryResolver { return &queryResolver{r} }
 type mutationResolver struct{ *Resolver }
 
 func (r *Resolver) Mutation() server.MutationResolver { return &mutationResolver{r} }
-
-type userResolver struct{ *Resolver }
-
-func (r *Resolver) User() server.UserResolver { return &userResolver{r} }

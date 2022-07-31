@@ -2,7 +2,7 @@ type User {
   id: ID!
   username: String!
   email: String!
-  kind: Int!
+  kind: UserKind!
   displayName: String
   bio: String
   createdAt: Time!
@@ -13,4 +13,19 @@ input UserInput {
   username: String!
   email: String!
   password: String!
+}
+
+input UserUpdateInput {
+  username: String
+  email: String
+  password: String
+  kind: UserKind
+  displayName: String
+  bio: String
+}
+
+enum UserKind {
+  BANNED
+  USER
+  ADMIN
 }
