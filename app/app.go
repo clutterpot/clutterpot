@@ -28,5 +28,6 @@ func (app *App) Init() *App {
 
 func (app *App) Run() {
 	app.migrateDB()
+	app.registerHandlers()
 	app.serveHTTP()
 }
