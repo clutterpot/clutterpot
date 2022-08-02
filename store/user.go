@@ -4,18 +4,27 @@ import (
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
+	"github.com/clutterpot/clutterpot/validator"
 
 	sq "github.com/Masterminds/squirrel"
+
 	"github.com/jmoiron/sqlx"
 )
 
 type userStore struct {
-	db *sqlx.DB
+	db  *sqlx.DB
+	val *validator.Validator
 }
 
-func newUserStore(db *sqlx.DB) *userStore { return &userStore{db: db} }
+func newUserStore(db *sqlx.DB, val *validator.Validator) *userStore {
+	return &userStore{db: db, val: val}
+}
 
-func (us *userStore) Create(input *model.UserInput) (*model.User, error) {
+func (us *userStore) Create(input model.UserInput) (*model.User, error) {
+	if err := us.val.Validate(input); err != nil {
+		return nil, err
+	}
+
 	var u model.User
 
 	if err := sq.Insert("users").SetMap(sq.Eq{
@@ -33,12 +42,16 @@ func (us *userStore) Create(input *model.UserInput) (*model.User, error) {
 	return &u, nil
 }
 
-func (us *userStore) Update(id string, input *model.UserUpdateInput) (*model.User, error) {
+func (us *userStore) Update(id string, input model.UserUpdateInput) (*model.User, error) {
+	if err := us.val.Validate(input); err != nil {
+		return nil, err
+	}
+
 	var u model.User
 
 	query := sq.Update("users").Set("updated_at", "now()")
 
-	if *input == (model.UserUpdateInput{}) {
+	if input == (model.UserUpdateInput{}) {
 		return nil, fmt.Errorf("user update input cannot be empty")
 	}
 	if input.Username != nil {

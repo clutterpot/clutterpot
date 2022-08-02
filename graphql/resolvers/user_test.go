@@ -7,6 +7,7 @@ import (
 	"github.com/clutterpot/clutterpot/graphql/server"
 	"github.com/clutterpot/clutterpot/model"
 	"github.com/clutterpot/clutterpot/store"
+	"github.com/clutterpot/clutterpot/validator"
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -15,7 +16,7 @@ import (
 )
 
 func TestUserResolvers(t *testing.T) {
-	store := store.New(db.Connect())
+	store := store.New(db.Connect(), validator.New())
 	gqlServer := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{
 		Resolvers: New(store),
 	}))
@@ -27,7 +28,7 @@ func TestUserResolvers(t *testing.T) {
 }
 
 func testUserResolvers_User(t *testing.T, c *client.Client, s *store.Store) {
-	user, err := s.User.Create(&model.UserInput{
+	user, err := s.User.Create(model.UserInput{
 		Username: "test_" + model.NewID(),
 		Email:    "test_" + model.NewID() + "@example.com",
 		Password: "Password1!",
@@ -80,7 +81,7 @@ func testUserResolvers_CreateUser(t *testing.T, c *client.Client, s *store.Store
 }
 
 func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store) {
-	user, err := s.User.Create(&model.UserInput{
+	user, err := s.User.Create(model.UserInput{
 		Username: "test_" + model.NewID(),
 		Email:    "test_" + model.NewID() + "@example.com",
 		Password: "Password1!",

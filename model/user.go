@@ -27,18 +27,18 @@ const (
 )
 
 type UserInput struct {
-	Username string
-	Email    string
-	Password string
+	Username string `validate:"required,username,min=4,max=32"`
+	Email    string `validate:"required,email,max=254"`
+	Password string `validate:"required,password,min=8,max=255"`
 }
 
 type UserUpdateInput struct {
-	Username    *string
-	Email       *string
-	Password    *string
+	Username    *string `validate:"omitempty,username,min=4,max=32"`
+	Email       *string `validate:"omitempty,email,max=254"`
+	Password    *string `validate:"omitempty,password,min=8,max=255"`
 	Kind        *UserKind
-	DisplayName *string
-	Bio         *string
+	DisplayName *string `validate:"omitempty,displayname,max=32"`
+	Bio         *string `validate:"omitempty,printunicode,max=160"`
 }
 
 func HashPassword(password string) string {

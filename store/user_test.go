@@ -5,13 +5,14 @@ import (
 
 	"github.com/clutterpot/clutterpot/db"
 	"github.com/clutterpot/clutterpot/model"
+	"github.com/clutterpot/clutterpot/validator"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUserStore(t *testing.T) {
-	store := New(db.Connect())
+	store := New(db.Connect(), validator.New())
 
 	t.Run("Create", func(t *testing.T) { testUserStore_Create(t, store) })
 	t.Run("Update", func(t *testing.T) { testUserStore_Update(t, store) })
@@ -20,7 +21,7 @@ func TestUserStore(t *testing.T) {
 }
 
 func testUserStore_Create(t *testing.T, s *Store) {
-	user, err := s.User.Create(&model.UserInput{
+	user, err := s.User.Create(model.UserInput{
 		Username: "test_" + model.NewID(),
 		Email:    "test_" + model.NewID() + "@example.com",
 		Password: "Password1!",
@@ -30,7 +31,7 @@ func testUserStore_Create(t *testing.T, s *Store) {
 }
 
 func testUserStore_Update(t *testing.T, s *Store) {
-	user, err := s.User.Create(&model.UserInput{
+	user, err := s.User.Create(model.UserInput{
 		Username: "test_" + model.NewID(),
 		Email:    "test_" + model.NewID() + "@example.com",
 		Password: "Password1!",
@@ -38,12 +39,12 @@ func testUserStore_Update(t *testing.T, s *Store) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
 
-	_, err = s.User.Update(user.ID, &model.UserUpdateInput{})
+	_, err = s.User.Update(user.ID, model.UserUpdateInput{})
 	assert.EqualError(t, err, "user update input cannot be empty", "'user update input cannot be empty' error should have been returned")
 
 	username := "test_" + model.NewID()
 
-	updatedUser, err := s.User.Update(user.ID, &model.UserUpdateInput{Username: &username})
+	updatedUser, err := s.User.Update(user.ID, model.UserUpdateInput{Username: &username})
 	require.NoError(t, err, "cannot update user")
 	assert.Equal(t, username, updatedUser.Username, "username should have been updated")
 	assert.Equal(t, user.CreatedAt, updatedUser.CreatedAt, "user created at should not have been updated")
@@ -51,7 +52,7 @@ func testUserStore_Update(t *testing.T, s *Store) {
 }
 
 func testUserStore_Delete(t *testing.T, s *Store) {
-	user, err := s.User.Create(&model.UserInput{
+	user, err := s.User.Create(model.UserInput{
 		Username: "test_" + model.NewID(),
 		Email:    "test_" + model.NewID() + "@example.com",
 		Password: "Password1!",
@@ -62,7 +63,7 @@ func testUserStore_Delete(t *testing.T, s *Store) {
 }
 
 func testUserStore_GetByID(t *testing.T, s *Store) {
-	user, err := s.User.Create(&model.UserInput{
+	user, err := s.User.Create(model.UserInput{
 		Username: "test_" + model.NewID(),
 		Email:    "test_" + model.NewID() + "@example.com",
 		Password: "Password1!",
