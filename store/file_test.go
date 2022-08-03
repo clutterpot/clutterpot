@@ -21,37 +21,37 @@ func TestFileStore(t *testing.T) {
 }
 
 func testFileStore_Create(t *testing.T, s *Store) {
-	file, err := s.File.Create(&model.FileInput{Name: "test"})
+	file, err := s.File.Create(model.FileInput{Filename: "test"})
 	require.NoError(t, err, "cannot create file")
 	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
 }
 
 func testFileStore_Update(t *testing.T, s *Store) {
-	file, err := s.File.Create(&model.FileInput{Name: "test"})
+	file, err := s.File.Create(model.FileInput{Filename: "test"})
 	require.NoError(t, err)
 	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
 
-	_, err = s.File.Update(file.ID, &model.FileUpdateInput{})
+	_, err = s.File.Update(file.ID, model.FileUpdateInput{})
 	assert.EqualError(t, err, "file update input cannot be empty", "'file update input cannot be empty' error should have been returned")
 
-	name := "test_" + model.NewID()
+	filename := "test_" + model.NewID()
 
-	updatedFile, err := s.File.Update(file.ID, &model.FileUpdateInput{Name: &name})
+	updatedFile, err := s.File.Update(file.ID, model.FileUpdateInput{Filename: &filename})
 	require.NoError(t, err, "cannot update file")
-	assert.Equal(t, name, updatedFile.Name, "file name should have been updated")
+	assert.Equal(t, filename, updatedFile.Filename, "filename should have been updated")
 	assert.Equal(t, file.CreatedAt, updatedFile.CreatedAt, "file created at should not have been updated")
 	assert.NotEqual(t, file.UpdatedAt, updatedFile.UpdatedAt, "file updated at should have been updated")
 }
 
 func testFileStore_Delete(t *testing.T, s *Store) {
-	file, err := s.File.Create(&model.FileInput{Name: "test"})
+	file, err := s.File.Create(model.FileInput{Filename: "test"})
 	require.NoError(t, err)
 
 	require.NoError(t, s.File.Delete(file.ID), "cannot delete file")
 }
 
 func testFileStore_GetByID(t *testing.T, s *Store) {
-	file, err := s.File.Create(&model.FileInput{Name: "test"})
+	file, err := s.File.Create(model.FileInput{Filename: "test"})
 	require.NoError(t, err)
 	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
 

@@ -4,7 +4,7 @@ import "time"
 
 type File struct {
 	ID        string
-	Name      string
+	Filename  string
 	MimeType  string
 	Extension string
 	Size      int64
@@ -14,9 +14,9 @@ type File struct {
 }
 
 type FileInput struct {
-	Name string
+	Filename string `validate:"required,filename,printunicode,min=1,max=255"`
 }
 
 type FileUpdateInput struct {
-	Name *string
+	Filename *string `validate:"omitempty,filename,printunicode,min=1,max=255"`
 }

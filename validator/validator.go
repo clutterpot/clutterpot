@@ -3,7 +3,7 @@ package validator
 import "github.com/go-playground/validator/v10"
 
 type Validator struct {
-	val validator.Validate
+	val *validator.Validate
 }
 
 func New() *Validator {
@@ -15,7 +15,10 @@ func New() *Validator {
 	val.RegisterValidation("password", checkPassword)
 	val.RegisterValidation("displayname", checkDisplayName)
 
-	return &Validator{val: *val}
+	// File
+	val.RegisterValidation("filename", checkFilename)
+
+	return &Validator{val: val}
 }
 
 func (v *Validator) Validate(m any) error {

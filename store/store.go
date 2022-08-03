@@ -17,6 +17,6 @@ func New(db *sqlx.DB, val *validator.Validator) *Store {
 		db:   db,
 		val:  val,
 		User: newUserStore(db, val),
-		File: newFileStore(db),
+		File: newFileStore(db, val),
 	}
 }

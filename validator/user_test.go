@@ -331,7 +331,7 @@ func testUserValidation_Bio_omitempty(t *testing.T, v *Validator, m any) {
 
 func testUserValidation_Bio_printunicode(t *testing.T, v *Validator, m any) {
 	err := v.val.StructPartial(m, "Bio")
-	require.Error(t, err, "validation should have failed on bio with non printable unicode character")
+	require.Error(t, err, "validation should have failed on bio with non printable unicode characters")
 	assert.Equal(t, len(err.(validator.ValidationErrors)), 1, "validation should have failed only on \"printunicode\" tag")
 	assert.Equal(t, "printunicode", err.(validator.ValidationErrors)[0].Tag(), "validation should have failed on \"printunicode\" tag")
 }
