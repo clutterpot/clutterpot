@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
@@ -30,7 +31,7 @@ func (us *userStore) Create(input model.UserInput) (*model.User, error) {
 	}).Suffix("RETURNING id, username, email, kind, display_name, bio, created_at, updated_at").
 		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
 		Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("an error occurred while creating a user")
 	}
 
 	return &u, nil
@@ -67,7 +68,11 @@ func (us *userStore) Update(id string, input model.UserUpdateInput) (*model.User
 		Suffix("RETURNING id, username, email, kind, display_name, bio, created_at, updated_at").
 		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
 		Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+
+		return nil, fmt.Errorf("an error occurred while updating a user")
 	}
 
 	return &u, nil
@@ -76,7 +81,7 @@ func (us *userStore) Update(id string, input model.UserUpdateInput) (*model.User
 func (us *userStore) Delete(id string) error {
 	if _, err := sq.Delete("users").Where("id = ?", id).
 		PlaceholderFormat(sq.Dollar).RunWith(us.db).Query(); err != nil {
-		return err
+		return fmt.Errorf("an error occurred while deleting a user")
 	}
 
 	return nil
@@ -89,7 +94,11 @@ func (us *userStore) GetByID(id string) (*model.User, error) {
 		From("users").Where("id = ?", id).
 		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
 		Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+
+		return nil, fmt.Errorf("an error occurred while getting a user by id")
 	}
 
 	return &u, nil

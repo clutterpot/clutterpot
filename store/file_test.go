@@ -40,6 +40,10 @@ func testFileStore_Update(t *testing.T, s *Store) {
 	assert.Equal(t, filename, updatedFile.Filename, "filename should have been updated")
 	assert.Equal(t, file.CreatedAt, updatedFile.CreatedAt, "file created at should not have been updated")
 	assert.NotEqual(t, file.UpdatedAt, updatedFile.UpdatedAt, "file updated at should have been updated")
+
+	_, err = s.File.Update(model.NewID(), model.FileUpdateInput{Filename: &filename})
+	require.Error(t, err, "an error should have been returned")
+	assert.EqualError(t, err, "file not found", "'file not found' error should have been returned")
 }
 
 func testFileStore_Delete(t *testing.T, s *Store) {
@@ -58,5 +62,6 @@ func testFileStore_GetByID(t *testing.T, s *Store) {
 	require.NoError(t, err, "cannot get file by id")
 
 	_, err = s.File.GetByID(model.NewID())
-	require.Error(t, err, "'no rows in result set' error should have been returned")
+	require.Error(t, err, "an error should have been returned")
+	assert.EqualError(t, err, "file not found", "'file not found' error should have been returned")
 }

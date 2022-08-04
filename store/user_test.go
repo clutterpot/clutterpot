@@ -48,6 +48,10 @@ func testUserStore_Update(t *testing.T, s *Store) {
 	assert.Equal(t, username, updatedUser.Username, "username should have been updated")
 	assert.Equal(t, user.CreatedAt, updatedUser.CreatedAt, "user created at should not have been updated")
 	assert.NotEqual(t, user.UpdatedAt, updatedUser.UpdatedAt, "user updated at should have been updated")
+
+	_, err = s.User.Update(model.NewID(), model.UserUpdateInput{Username: &username})
+	require.Error(t, err, "an error should have been returned")
+	assert.EqualError(t, err, "user not found", "'user not found' error should have been returned")
 }
 
 func testUserStore_Delete(t *testing.T, s *Store) {
@@ -74,5 +78,6 @@ func testUserStore_GetByID(t *testing.T, s *Store) {
 	require.NoError(t, err, "cannot get user by id")
 
 	_, err = s.User.GetByID(model.NewID())
-	require.Error(t, err, "'no rows in result set' error should have been returned")
+	require.Error(t, err, "an error should have been returned")
+	assert.EqualError(t, err, "user not found", "'user not found' error should have been returned")
 }

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
@@ -29,7 +30,7 @@ func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 	}).Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at").
 		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
 		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("an error occurred while creating a file")
 	}
 
 	return &f, nil
@@ -51,7 +52,11 @@ func (fs *fileStore) Update(id string, input model.FileUpdateInput) (*model.File
 		Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at").
 		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
 		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("file not found")
+		}
+
+		return nil, fmt.Errorf("an error occurred while updating a file")
 	}
 
 	return &f, nil
@@ -60,7 +65,7 @@ func (fs *fileStore) Update(id string, input model.FileUpdateInput) (*model.File
 func (fs *fileStore) Delete(id string) error {
 	if _, err := sq.Delete("files").Where("id = ?", id).
 		PlaceholderFormat(sq.Dollar).RunWith(fs.db).Query(); err != nil {
-		return err
+		return fmt.Errorf("an error occurred while deleting a file")
 	}
 
 	return nil
@@ -73,7 +78,11 @@ func (fs *fileStore) GetByID(id string) (*model.File, error) {
 		From("files").Where("id = ?", id).
 		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
 		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("file not found")
+		}
+
+		return nil, fmt.Errorf("an error occurred while getting a file by id")
 	}
 
 	return &f, nil

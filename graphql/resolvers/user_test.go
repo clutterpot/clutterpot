@@ -55,17 +55,17 @@ func testUserResolvers_User(t *testing.T, c *client.Client, s *store.Store) {
 	assert.Equal(t, user.ID, resp.User.ID, "user id should have been the same")
 
 	err = c.Post(query, &resp, client.Var("id", model.NewID()))
-	require.Error(t, err, "'no rows in result set' error should have been returned")
+	require.Error(t, err, "'user not found' error should have been returned")
 }
 
 func testUserResolvers_CreateUser(t *testing.T, c *client.Client, s *store.Store) {
 	query := `
-	mutation createUser($input: UserInput!) {
-		createUser(input: $input) {
-			id
+		mutation createUser($input: UserInput!) {
+			createUser(input: $input) {
+				id
+			}
 		}
-	}
-	`
+		`
 
 	var resp struct {
 		CreateUser struct {
@@ -91,12 +91,12 @@ func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
 
 	query := `
-	mutation updateUser($id: ID!, $input: UserUpdateInput!) {
-		updateUser(id: $id, input: $input) {
-			username
+		mutation updateUser($id: ID!, $input: UserUpdateInput!) {
+			updateUser(id: $id, input: $input) {
+				username
+			}
 		}
-	}
-	`
+		`
 
 	username := "test_" + model.NewID()
 	var resp struct {
@@ -109,4 +109,9 @@ func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store
 	}))
 	require.NoError(t, err, "cannot update user")
 	assert.Equal(t, username, resp.UpdateUser.Username, "username should have been updated")
+
+	err = c.Post(query, &resp, client.Var("id", model.NewID()), client.Var("input", map[string]string{
+		"username": username,
+	}))
+	require.Error(t, err, "'user not found' error should have been returned")
 }

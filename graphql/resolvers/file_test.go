@@ -51,17 +51,17 @@ func testFileResolvers_File(t *testing.T, c *client.Client, s *store.Store) {
 	assert.Equal(t, file.ID, resp.File.ID, "file id should have been the same")
 
 	err = c.Post(query, &resp, client.Var("id", model.NewID()))
-	require.Error(t, err, "'no rows in result set' error should have been returned")
+	require.Error(t, err, "'file not found' error should have been returned")
 }
 
 func testFileResolvers_CreateFile(t *testing.T, c *client.Client, s *store.Store) {
 	query := `
-	mutation createFile($input: FileInput!) {
-		createFile(input: $input) {
-			id
+		mutation createFile($input: FileInput!) {
+			createFile(input: $input) {
+				id
+			}
 		}
-	}
-	`
+		`
 
 	var resp struct {
 		CreateFile struct {
@@ -81,12 +81,12 @@ func testFileResolvers_UpdateFile(t *testing.T, c *client.Client, s *store.Store
 	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
 
 	query := `
-	mutation updateFile($id: ID!, $input: FileUpdateInput!) {
-		updateFile(id: $id, input: $input) {
-			filename
+		mutation updateFile($id: ID!, $input: FileUpdateInput!) {
+			updateFile(id: $id, input: $input) {
+				filename
+			}
 		}
-	}
-	`
+		`
 
 	filename := "test_" + model.NewID()
 	var resp struct {
@@ -99,4 +99,9 @@ func testFileResolvers_UpdateFile(t *testing.T, c *client.Client, s *store.Store
 	}))
 	require.NoError(t, err, "cannot update file")
 	assert.Equal(t, filename, resp.UpdateFile.Filename, "filename should have been updated")
+
+	err = c.Post(query, &resp, client.Var("id", model.NewID()), client.Var("input", map[string]string{
+		"filename": filename,
+	}))
+	require.Error(t, err, "'file not found' error should have been returned")
 }
