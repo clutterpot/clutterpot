@@ -4,26 +4,20 @@ import (
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
-	"github.com/clutterpot/clutterpot/validator"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 )
 
 type fileStore struct {
-	db  *sqlx.DB
-	val *validator.Validator
+	db *sqlx.DB
 }
 
-func newFileStore(db *sqlx.DB, val *validator.Validator) *fileStore {
-	return &fileStore{db: db, val: val}
+func newFileStore(db *sqlx.DB) *fileStore {
+	return &fileStore{db: db}
 }
 
 func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
-	if err := fs.val.Validate(input); err != nil {
-		return nil, err
-	}
-
 	var f model.File
 
 	if err := sq.Insert("files").SetMap(sq.Eq{
@@ -42,10 +36,6 @@ func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 }
 
 func (fs *fileStore) Update(id string, input model.FileUpdateInput) (*model.File, error) {
-	if err := fs.val.Validate(input); err != nil {
-		return nil, err
-	}
-
 	var f model.File
 
 	query := sq.Update("files").Set("updated_at", "now()")

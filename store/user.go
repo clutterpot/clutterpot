@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
-	"github.com/clutterpot/clutterpot/validator"
 
 	sq "github.com/Masterminds/squirrel"
 
@@ -12,19 +11,14 @@ import (
 )
 
 type userStore struct {
-	db  *sqlx.DB
-	val *validator.Validator
+	db *sqlx.DB
 }
 
-func newUserStore(db *sqlx.DB, val *validator.Validator) *userStore {
-	return &userStore{db: db, val: val}
+func newUserStore(db *sqlx.DB) *userStore {
+	return &userStore{db: db}
 }
 
 func (us *userStore) Create(input model.UserInput) (*model.User, error) {
-	if err := us.val.Validate(input); err != nil {
-		return nil, err
-	}
-
 	var u model.User
 
 	if err := sq.Insert("users").SetMap(sq.Eq{
@@ -43,10 +37,6 @@ func (us *userStore) Create(input model.UserInput) (*model.User, error) {
 }
 
 func (us *userStore) Update(id string, input model.UserUpdateInput) (*model.User, error) {
-	if err := us.val.Validate(input); err != nil {
-		return nil, err
-	}
-
 	var u model.User
 
 	query := sq.Update("users").Set("updated_at", "now()")

@@ -16,9 +16,10 @@ import (
 )
 
 func TestUserResolvers(t *testing.T) {
-	store := store.New(db.Connect(), validator.New())
+	store := store.New(db.Connect())
+	val := validator.New()
 	gqlServer := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{
-		Resolvers: New(store),
+		Resolvers: New(store, val),
 	}))
 	gqlClient := client.New(gqlServer)
 

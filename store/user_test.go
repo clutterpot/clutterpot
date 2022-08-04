@@ -5,14 +5,13 @@ import (
 
 	"github.com/clutterpot/clutterpot/db"
 	"github.com/clutterpot/clutterpot/model"
-	"github.com/clutterpot/clutterpot/validator"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUserStore(t *testing.T) {
-	store := New(db.Connect(), validator.New())
+	store := New(db.Connect())
 
 	t.Run("Create", func(t *testing.T) { testUserStore_Create(t, store) })
 	t.Run("Update", func(t *testing.T) { testUserStore_Update(t, store) })

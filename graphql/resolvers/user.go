@@ -11,8 +11,16 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserInput) (*model.User, error) {
+	if err := r.Validator.Validate(ctx, input); err != nil {
+		return nil, nil
+	}
+
 	return r.Store.User.Create(input)
 }
 func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input model.UserUpdateInput) (*model.User, error) {
+	if err := r.Validator.Validate(ctx, input); err != nil {
+		return nil, nil
+	}
+
 	return r.Store.User.Update(id, input)
 }

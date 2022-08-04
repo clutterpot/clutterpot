@@ -25,5 +25,5 @@ func (app *App) registerHandlers() {
 	app.http.Use(middleware.Logger)
 
 	// GraphQL API
-	app.http.Mount("/", handlers.GQLHandler(app.store))
+	app.http.Mount("/", handlers.GQLHandler(app.store, app.val))
 }

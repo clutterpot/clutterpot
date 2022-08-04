@@ -5,13 +5,17 @@ package resolvers
 import (
 	"github.com/clutterpot/clutterpot/graphql/server"
 	"github.com/clutterpot/clutterpot/store"
+	"github.com/clutterpot/clutterpot/validator"
 )
 
 type Resolver struct {
-	Store *store.Store
+	Store     *store.Store
+	Validator *validator.Validator
 }
 
-func New(store *store.Store) *Resolver { return &Resolver{Store: store} }
+func New(store *store.Store, val *validator.Validator) *Resolver {
+	return &Resolver{Store: store, Validator: val}
+}
 
 type queryResolver struct{ *Resolver }
 

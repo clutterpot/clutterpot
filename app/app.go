@@ -24,7 +24,7 @@ func (app *App) Init() *App {
 	app.db = db.Connect()
 	app.http = chi.NewRouter()
 	app.val = validator.New()
-	app.store = store.New(app.db, app.val)
+	app.store = store.New(app.db)
 	app.val = validator.New()
 
 	return app
