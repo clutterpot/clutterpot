@@ -362,34 +362,68 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../schema/file.graphql", Input: `type File {
+  "Unique file ID"
   id: ID!
+
+  "Filename"
   filename: String!
+
+  "File [mime type](https://www.iana.org/assignments/media-types/media-types.xhtml)"
   mimeType: String!
+
+  "File extension"
   extension: String!
+
+  "File size in bytes"
   size: Int!
+
+  "Time of creation"
   createdAt: Time!
+
+  "Time of last update"
   updatedAt: Time!
+
+  "Time of deletion"
   deletedAt: Time
 }
 
 input FileInput {
+  "Filename"
   filename: String!
 }
 
 input FileUpdateInput {
+  "Filename"
   filename: String
 }
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
+  # User
+
+  "Create user with UserInput"
   createUser(input: UserInput!): User
+
+  "Update user with ID and UserUpdateInput"
   updateUser(id: ID!, input: UserUpdateInput!): User
 
+  # File
+
+  "Create file with FileInput"
   createFile(input: FileInput!): File
+
+  "Update file with ID and FileUpdateInput"
   updateFile(id: ID!, input: FileUpdateInput!): File
 }
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `type Query {
+  # User
+
+  "Get user by ID"
   user(id: ID!): User
+
+  # File
+
+  "Get file by ID"
   file(id: ID!): File
 }
 `, BuiltIn: false},
@@ -401,34 +435,70 @@ input FileUpdateInput {
 scalar Time
 `, BuiltIn: false},
 	{Name: "../schema/user.graphql", Input: `type User {
+  "Unique user ID"
   id: ID!
+
+  "Unique username"
   username: String!
+
+  "User email"
   email: String!
+
+  "User kind"
   kind: UserKind!
+
+  "User display name"
   displayName: String
+
+  "User bio"
   bio: String
+
+  "Time of creation"
   createdAt: Time!
+
+  "Time of last update"
   updatedAt: Time!
 }
 
 input UserInput {
+  "Username"
   username: String!
+
+  "User email"
   email: String!
+
+  "User password"
   password: String!
 }
 
 input UserUpdateInput {
+  "Username"
   username: String
+
+  "User email"
   email: String
+
+  "User password"
   password: String
+
+  "User kind"
   kind: UserKind
+
+  "User display name"
   displayName: String
+
+  "User bio"
   bio: String
 }
 
 enum UserKind {
+  "User is banned"
   BANNED
+
+  "User is a standard user"
   USER
+
+  "User has admin permissions"
   ADMIN
 }
 `, BuiltIn: false},

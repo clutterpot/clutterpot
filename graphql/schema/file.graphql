@@ -1,18 +1,35 @@
 type File {
+  "Unique file ID"
   id: ID!
+
+  "Filename"
   filename: String!
+
+  "File [mime type](https://www.iana.org/assignments/media-types/media-types.xhtml)"
   mimeType: String!
+
+  "File extension"
   extension: String!
+
+  "File size in bytes"
   size: Int!
+
+  "Time of creation"
   createdAt: Time!
+
+  "Time of last update"
   updatedAt: Time!
+
+  "Time of deletion"
   deletedAt: Time
 }
 
 input FileInput {
+  "Filename"
   filename: String!
 }
 
 input FileUpdateInput {
+  "Filename"
   filename: String
 }

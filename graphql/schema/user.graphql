@@ -1,31 +1,67 @@
 type User {
+  "Unique user ID"
   id: ID!
+
+  "Unique username"
   username: String!
+
+  "User email"
   email: String!
+
+  "User kind"
   kind: UserKind!
+
+  "User display name"
   displayName: String
+
+  "User bio"
   bio: String
+
+  "Time of creation"
   createdAt: Time!
+
+  "Time of last update"
   updatedAt: Time!
 }
 
 input UserInput {
+  "Username"
   username: String!
+
+  "User email"
   email: String!
+
+  "User password"
   password: String!
 }
 
 input UserUpdateInput {
+  "Username"
   username: String
+
+  "User email"
   email: String
+
+  "User password"
   password: String
+
+  "User kind"
   kind: UserKind
+
+  "User display name"
   displayName: String
+
+  "User bio"
   bio: String
 }
 
 enum UserKind {
+  "User is banned"
   BANNED
+
+  "User is a standard user"
   USER
+
+  "User has admin permissions"
   ADMIN
 }

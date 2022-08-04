@@ -1,4 +1,11 @@
 type Query {
+  # User
+
+  "Get user by ID"
   user(id: ID!): User
+
+  # File
+
+  "Get file by ID"
   file(id: ID!): File
 }

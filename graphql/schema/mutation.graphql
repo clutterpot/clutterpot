@@ -1,7 +1,17 @@
 type Mutation {
+  # User
+
+  "Create user with UserInput"
   createUser(input: UserInput!): User
+
+  "Update user with ID and UserUpdateInput"
   updateUser(id: ID!, input: UserUpdateInput!): User
 
+  # File
+
+  "Create file with FileInput"
   createFile(input: FileInput!): File
+
+  "Update file with ID and FileUpdateInput"
   updateFile(id: ID!, input: FileUpdateInput!): File
 }
