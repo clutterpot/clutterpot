@@ -87,6 +87,13 @@ func (v *Validator) registerTranslations() {
 		t, _ := ut.T("displayname", fe.Field())
 		return t
 	})
+
+	v.val.RegisterTranslation("filename", trans, func(ut ut.Translator) error {
+		return ut.Add("filename", "{0} must contain only printable unicode characters and must not contain characters: '/', '>', '|', ':', and '&'", false)
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("filename", fe.Field())
+		return t
+	})
 }
 
 func (v *Validator) registerValidations() {
