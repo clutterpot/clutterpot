@@ -1,17 +1,23 @@
 type Mutation {
+  # Auth
+
+  # TODO: Add login mutation
+  # "Sign in with email and password"
+  # login(email: String!, password: String!): AuthPayload
+
   # User
 
   "Create user with UserInput"
   createUser(input: UserInput!): User
 
   "Update user with ID and UserUpdateInput"
-  updateUser(id: ID!, input: UserUpdateInput!): User
+  updateUser(id: ID!, input: UserUpdateInput!): User @auth
 
   # File
 
   "Create file with FileInput"
-  createFile(input: FileInput!): File
+  createFile(input: FileInput!): File @auth
 
   "Update file with ID and FileUpdateInput"
-  updateFile(id: ID!, input: FileUpdateInput!): File
+  updateFile(id: ID!, input: FileUpdateInput!): File @auth
 }

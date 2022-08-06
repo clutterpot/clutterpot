@@ -1,0 +1,9 @@
+type AuthPayload {
+  accessToken: String!
+  tokenType: String!
+  expiresIn: Time!
+  refreshToken: String
+  scope: String
+}
+
+directive @auth on FIELD_DEFINITION

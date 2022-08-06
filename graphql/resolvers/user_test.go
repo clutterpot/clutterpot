@@ -3,6 +3,7 @@ package resolvers
 import (
 	"testing"
 
+	"github.com/clutterpot/clutterpot/auth"
 	"github.com/clutterpot/clutterpot/db"
 	"github.com/clutterpot/clutterpot/graphql/server"
 	"github.com/clutterpot/clutterpot/model"
@@ -17,9 +18,8 @@ import (
 
 func TestUserResolvers(t *testing.T) {
 	store := store.New(db.Connect())
-	val := validator.New()
 	gqlServer := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{
-		Resolvers: New(store, val),
+		Resolvers: New(auth.New(), store, validator.New()),
 	}))
 	gqlClient := client.New(gqlServer)
 
