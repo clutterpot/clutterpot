@@ -2,6 +2,11 @@ package model
 
 import "time"
 
+type AuthUser struct {
+	User
+	Password string
+}
+
 type AuthPayload struct {
 	AccessToken  string
 	TokenType    string

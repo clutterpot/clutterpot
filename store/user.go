@@ -103,3 +103,21 @@ func (us *userStore) GetByID(id string) (*model.User, error) {
 
 	return &u, nil
 }
+
+// Only for auth purposes
+func (us *userStore) GetByEmail(email string) (*model.AuthUser, error) {
+	var u model.AuthUser
+
+	if err := sq.Select("id", "username", "email", "password", "kind", "display_name", "bio", "created_at", "updated_at").
+		From("users").Where("email = ?", email).
+		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
+		Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("invalid email or password")
+		}
+
+		return nil, fmt.Errorf("an error occurred while getting a user by email")
+	}
+
+	return &u, nil
+}

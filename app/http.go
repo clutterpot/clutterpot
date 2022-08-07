@@ -25,7 +25,7 @@ func (app *App) serveHTTP() {
 
 func (app *App) registerHandlers() {
 	app.http.Use(middleware.Logger)
-	app.http.Use(jwtauth.Verifier(app.auth.JWT))
+	app.http.Use(jwtauth.Verifier(app.auth.JWT()))
 
 	// GraphQL API
 	app.http.Mount("/", handlers.GQLHandler(app.auth, app.store, app.val))

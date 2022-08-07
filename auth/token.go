@@ -1,19 +1,31 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/clutterpot/clutterpot/model"
+	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func (a *Auth) NewToken(user *model.User) (string, error) {
+func (a *Auth) NewAccessToken(privateClaims *Claims) (jwt.Token, string, error) {
+	now := time.Now().UTC()
 	claims := map[string]any{
-		"id":  user.ID,
-		"usr": user.Username,
+		jwt.IssuedAtKey:   now,
+		jwt.ExpirationKey: now.Add(time.Minute * 10),
+		"uid":             privateClaims.UserID,
+		"usr":             privateClaims.Username,
+		"knd":             privateClaims.Kind,
 	}
 
-	_, tokenString, err := a.JWT.Encode(claims)
-	if err != nil {
-		return "", err
+	return a.jwt.Encode(claims)
+}
+
+func (a *Auth) NewRefreshToken(session *model.Session) (jwt.Token, string, error) {
+	claims := map[string]any{
+		jwt.IssuedAtKey:   session.CreatedAt,
+		jwt.ExpirationKey: session.ExpiresAt,
+		"sid":             session.ID,
 	}
 
-	return tokenString, nil
+	return a.jwt.Encode(claims)
 }

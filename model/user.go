@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -48,4 +49,12 @@ func HashPassword(password string) string {
 	}
 
 	return string(hash)
+}
+
+func CompareHashAndPassword(hash, password string) error {
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
+		return fmt.Errorf("invalid email or password")
+	}
+
+	return nil
 }

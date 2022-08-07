@@ -1,10 +1,12 @@
 package resolvers
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/clutterpot/clutterpot/auth"
 	"github.com/clutterpot/clutterpot/db"
+	"github.com/clutterpot/clutterpot/graphql/directives"
 	"github.com/clutterpot/clutterpot/graphql/server"
 	"github.com/clutterpot/clutterpot/model"
 	"github.com/clutterpot/clutterpot/store"
@@ -12,20 +14,25 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUserResolvers(t *testing.T) {
+	auth := auth.New()
 	store := store.New(db.Connect())
 	gqlServer := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{
-		Resolvers: New(auth.New(), store, validator.New()),
+		Resolvers:  New(auth, store, validator.New()),
+		Directives: directives.New(),
 	}))
-	gqlClient := client.New(gqlServer)
+	middlewares := chi.Middlewares{jwtauth.Verifier(auth.JWT())}
+	gqlClient := client.New(middlewares.Handler(gqlServer))
 
 	t.Run("User", func(t *testing.T) { testUserResolvers_User(t, gqlClient, store) })
 	t.Run("CreateUser", func(t *testing.T) { testUserResolvers_CreateUser(t, gqlClient, store) })
-	t.Run("UpdateUser", func(t *testing.T) { testUserResolvers_UpdateUser(t, gqlClient, store) })
+	t.Run("UpdateUser", func(t *testing.T) { testUserResolvers_UpdateUser(t, gqlClient, store, auth) })
 }
 
 func testUserResolvers_User(t *testing.T, c *client.Client, s *store.Store) {
@@ -81,7 +88,7 @@ func testUserResolvers_CreateUser(t *testing.T, c *client.Client, s *store.Store
 	defer func() { require.NoError(t, s.User.Delete(resp.CreateUser.ID)) }()
 }
 
-func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store) {
+func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store, a *auth.Auth) {
 	user, err := s.User.Create(model.UserInput{
 		Username: "test_" + model.NewID(),
 		Email:    "test_" + model.NewID() + "@example.com",
@@ -89,6 +96,9 @@ func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store
 	})
 	require.NoError(t, err)
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
+
+	_, token, err := a.NewAccessToken(&auth.Claims{UserID: user.ID, Username: user.Username, Kind: user.Kind})
+	require.NoError(t, err)
 
 	query := `
 		mutation updateUser($id: ID!, $input: UserUpdateInput!) {
@@ -106,12 +116,12 @@ func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store
 	}
 	err = c.Post(query, &resp, client.Var("id", user.ID), client.Var("input", map[string]string{
 		"username": username,
-	}))
+	}), client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
 	require.NoError(t, err, "cannot update user")
 	assert.Equal(t, username, resp.UpdateUser.Username, "username should have been updated")
 
 	err = c.Post(query, &resp, client.Var("id", model.NewID()), client.Var("input", map[string]string{
 		"username": username,
-	}))
+	}), client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
 	require.Error(t, err, "'user not found' error should have been returned")
 }

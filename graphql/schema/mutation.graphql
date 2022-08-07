@@ -1,9 +1,11 @@
 type Mutation {
   # Auth
 
-  # TODO: Add login mutation
-  # "Sign in with email and password"
-  # login(email: String!, password: String!): AuthPayload
+  "Sign in with email and password"
+  login(email: String!, password: String!): AuthPayload
+
+  "Refresh access token with refresh token"
+  refreshAccessToken(refreshToken: String!): AuthPayload
 
   # User
 
