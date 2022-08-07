@@ -6,6 +6,7 @@ import (
 
 func New() server.DirectiveRoot {
 	return server.DirectiveRoot{
-		Auth: auth,
+		Auth:   auth,
+		IsKind: isKind,
 	}
 }

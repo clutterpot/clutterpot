@@ -13,13 +13,13 @@ type Mutation {
   createUser(input: UserInput!): User
 
   "Update user with ID and UserUpdateInput"
-  updateUser(id: ID!, input: UserUpdateInput!): User @auth
+  updateUser(id: ID!, input: UserUpdateInput!): User @isKind(kind: USER) @auth
 
   # File
 
   "Create file with FileInput"
-  createFile(input: FileInput!): File @auth
+  createFile(input: FileInput!): File @isKind(kind: USER) @auth
 
   "Update file with ID and FileUpdateInput"
-  updateFile(id: ID!, input: FileUpdateInput!): File @auth
+  updateFile(id: ID!, input: FileUpdateInput!): File @isKind(kind: USER) @auth
 }

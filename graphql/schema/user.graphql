@@ -65,3 +65,7 @@ enum UserKind {
   "User has admin permissions"
   ADMIN
 }
+
+directive @isKind(
+  kind: UserKind!
+) on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
