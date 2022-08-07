@@ -44,23 +44,18 @@ func testAuthResolvers_Login(t *testing.T, c *client.Client, s *store.Store, a *
 	query := `
 		mutation login($email: String!, $password: String!) {
 			login(email: $email, password: $password) {
-				refreshToken
+				accessToken
 			}
 		}
 		`
 
 	var resp struct {
 		Login struct {
-			RefreshToken string
+			AccessToken string
 		}
 	}
 	err = c.Post(query, &resp, client.Var("email", user.Email), client.Var("password", "Password1!"))
 	require.NoError(t, err, "cannot sign in with email and password")
-	defer func() {
-		_, claims, err := a.Decode(resp.Login.RefreshToken)
-		require.NoError(t, err)
-		require.NoError(t, s.Session.Delete(claims["sid"].(string)))
-	}()
 }
 
 func testAuthResolvers_RefreshAccessToken(t *testing.T, c *client.Client, s *store.Store, a *auth.Auth) {
@@ -74,7 +69,6 @@ func testAuthResolvers_RefreshAccessToken(t *testing.T, c *client.Client, s *sto
 
 	session, err := s.Session.Create(model.SessionInput{UserID: user.ID})
 	require.NoError(t, err)
-	defer func() { require.NoError(t, s.Session.Delete(session.ID)) }()
 
 	_, token, err := a.NewRefreshToken(session)
 	require.NoError(t, err)
