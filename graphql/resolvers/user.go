@@ -17,10 +17,15 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserInput
 
 	return r.Store.User.Create(input)
 }
-func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input model.UserUpdateInput) (*model.User, error) {
+
+func (r *mutationResolver) UpdateUser(ctx context.Context, id *string, input model.UserUpdateInput) (*model.User, error) {
 	if err := r.Validator.Validate(ctx, input); err != nil {
 		return nil, nil
 	}
+	if id == nil {
+		// Get user id from access token claims
+		id = &r.Auth.ForContext(ctx).UserID
+	}
 
-	return r.Store.User.Update(id, input)
+	return r.Store.User.Update(*id, input)
 }

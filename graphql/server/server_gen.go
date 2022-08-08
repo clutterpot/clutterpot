@@ -71,7 +71,7 @@ type ComplexityRoot struct {
 		Login              func(childComplexity int, email string, password string) int
 		RefreshAccessToken func(childComplexity int, refreshToken string) int
 		UpdateFile         func(childComplexity int, id string, input model.FileUpdateInput) int
-		UpdateUser         func(childComplexity int, id string, input model.UserUpdateInput) int
+		UpdateUser         func(childComplexity int, id *string, input model.UserUpdateInput) int
 	}
 
 	Query struct {
@@ -95,7 +95,7 @@ type MutationResolver interface {
 	Login(ctx context.Context, email string, password string) (*model.AuthPayload, error)
 	RefreshAccessToken(ctx context.Context, refreshToken string) (*model.AuthPayload, error)
 	CreateUser(ctx context.Context, input model.UserInput) (*model.User, error)
-	UpdateUser(ctx context.Context, id string, input model.UserUpdateInput) (*model.User, error)
+	UpdateUser(ctx context.Context, id *string, input model.UserUpdateInput) (*model.User, error)
 	CreateFile(ctx context.Context, input model.FileInput) (*model.File, error)
 	UpdateFile(ctx context.Context, id string, input model.FileUpdateInput) (*model.File, error)
 }
@@ -280,7 +280,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(string), args["input"].(model.UserUpdateInput)), true
+		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(*string), args["input"].(model.UserUpdateInput)), true
 
 	case "Query.file":
 		if e.complexity.Query.File == nil {
@@ -495,7 +495,9 @@ input FileUpdateInput {
   createUser(input: UserInput!): User
 
   "Update user with ID and UserUpdateInput"
-  updateUser(id: ID!, input: UserUpdateInput!): User @isKind(kind: USER) @auth
+  updateUser(id: ID @isKind(kind: ADMIN), input: UserUpdateInput!): User
+    @isKind(kind: USER)
+    @auth
 
   # File
 
@@ -715,12 +717,31 @@ func (ec *executionContext) field_Mutation_updateFile_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOID2ᚖstring(ctx, tmp) }
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			kind, err := ec.unmarshalNUserKind2githubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.IsKind == nil {
+				return nil, errors.New("directive isKind is not implemented")
+			}
+			return ec.directives.IsKind(ctx, rawArgs, directive0, kind)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if data, ok := tmp.(*string); ok {
+			arg0 = data
+		} else if tmp == nil {
+			arg0 = nil
+		} else {
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp))
 		}
 	}
 	args["id"] = arg0
@@ -1595,7 +1616,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["id"].(string), fc.Args["input"].(model.UserUpdateInput))
+			return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["id"].(*string), fc.Args["input"].(model.UserUpdateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			kind, err := ec.unmarshalNUserKind2githubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, "USER")
@@ -5501,6 +5522,22 @@ func (ec *executionContext) marshalOFile2ᚖgithubᚗcomᚋclutterpotᚋclutterp
 		return graphql.Null
 	}
 	return ec._File(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalID(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

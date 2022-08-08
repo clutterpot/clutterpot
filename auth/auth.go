@@ -47,6 +47,6 @@ func (a *Auth) ForContext(ctx context.Context) *Claims {
 	return &Claims{
 		UserID:   claims["uid"].(string),
 		Username: claims["usr"].(string),
-		Kind:     claims["knd"].(model.UserKind),
+		Kind:     model.UserKind(claims["knd"].(float64)),
 	}
 }

@@ -13,7 +13,9 @@ type Mutation {
   createUser(input: UserInput!): User
 
   "Update user with ID and UserUpdateInput"
-  updateUser(id: ID!, input: UserUpdateInput!): User @isKind(kind: USER) @auth
+  updateUser(id: ID @isKind(kind: ADMIN), input: UserUpdateInput!): User
+    @isKind(kind: USER)
+    @auth
 
   # File
 

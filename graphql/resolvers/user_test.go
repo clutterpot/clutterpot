@@ -97,11 +97,11 @@ func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store
 	require.NoError(t, err)
 	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
 
-	_, token, err := a.NewAccessToken(&auth.Claims{UserID: user.ID, Username: user.Username, Kind: user.Kind})
+	_, token, err := a.NewAccessToken(&auth.Claims{UserID: user.ID, Username: user.Username, Kind: model.UserKindAdmin})
 	require.NoError(t, err)
 
 	query := `
-		mutation updateUser($id: ID!, $input: UserUpdateInput!) {
+		mutation updateUser($id: ID, $input: UserUpdateInput!) {
 			updateUser(id: $id, input: $input) {
 				username
 			}
@@ -114,9 +114,8 @@ func testUserResolvers_UpdateUser(t *testing.T, c *client.Client, s *store.Store
 			Username string
 		}
 	}
-	err = c.Post(query, &resp, client.Var("id", user.ID), client.Var("input", map[string]string{
-		"username": username,
-	}), client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
+	err = c.Post(query, &resp, client.Var("input", map[string]string{"username": username}),
+		client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
 	require.NoError(t, err, "cannot update user")
 	assert.Equal(t, username, resp.UpdateUser.Username, "username should have been updated")
 
