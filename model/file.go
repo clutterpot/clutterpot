@@ -3,14 +3,14 @@ package model
 import "time"
 
 type File struct {
-	ID        string
-	Filename  string
-	MimeType  string
-	Extension string
-	Size      int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
+	ID        string     `json:"id"`
+	Filename  string     `json:"filename"`
+	MimeType  string     `json:"mimeType"`
+	Extension string     `json:"extension"`
+	Size      int64      `json:"size"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	DeletedAt *time.Time `json:"deletedAt"`
 }
 
 type FileInput struct {

@@ -9,14 +9,14 @@ import (
 )
 
 type User struct {
-	ID          string
-	Username    string
-	Email       string
-	Kind        UserKind
-	DisplayName *string
-	Bio         *string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          string    `json:"id"`
+	Username    string    `json:"username"`
+	Email       string    `json:"email"`
+	Kind        UserKind  `json:"kind"`
+	DisplayName *string   `json:"displayName"`
+	Bio         *string   `json:"bio"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 type UserKind int8

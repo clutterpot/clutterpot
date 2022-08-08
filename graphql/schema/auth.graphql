@@ -1,9 +1,12 @@
-type AuthPayload {
+type LoginPayload {
   accessToken: String!
-  tokenType: String!
   expiresIn: Time!
-  refreshToken: String
-  scope: String
+  refreshToken: String!
+}
+
+type RefreshAccessTokenPayload {
+  accessToken: String!
+  expiresIn: Time!
 }
 
 directive @auth on FIELD_DEFINITION

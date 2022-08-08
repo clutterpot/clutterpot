@@ -2,10 +2,10 @@ type Mutation {
   # Auth
 
   "Sign in with email and password"
-  login(email: String!, password: String!): AuthPayload
+  login(email: String!, password: String!): LoginPayload
 
   "Refresh access token with refresh token"
-  refreshAccessToken(refreshToken: String!): AuthPayload
+  refreshAccessToken(refreshToken: String!): RefreshAccessTokenPayload
 
   # User
 

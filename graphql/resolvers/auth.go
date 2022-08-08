@@ -7,7 +7,7 @@ import (
 	"github.com/clutterpot/clutterpot/model"
 )
 
-func (r *mutationResolver) Login(ctx context.Context, email, password string) (*model.AuthPayload, error) {
+func (r *mutationResolver) Login(ctx context.Context, email, password string) (*model.LoginPayload, error) {
 	user, err := r.Store.User.GetByEmail(email)
 	if err != nil {
 		return nil, err
@@ -36,15 +36,14 @@ func (r *mutationResolver) Login(ctx context.Context, email, password string) (*
 		return nil, err
 	}
 
-	return &model.AuthPayload{
+	return &model.LoginPayload{
 		AccessToken:  accessTokenString,
-		TokenType:    "Bearer",
 		ExpiresIn:    accessToken.Expiration(),
-		RefreshToken: &refreshTokenString,
+		RefreshToken: refreshTokenString,
 	}, nil
 }
 
-func (r *mutationResolver) RefreshAccessToken(ctx context.Context, refreshToken string) (*model.AuthPayload, error) {
+func (r *mutationResolver) RefreshAccessToken(ctx context.Context, refreshToken string) (*model.RefreshAccessTokenPayload, error) {
 	_, sessionClaims, err := r.Auth.Decode(refreshToken)
 	if err != nil {
 		return nil, err
@@ -64,9 +63,8 @@ func (r *mutationResolver) RefreshAccessToken(ctx context.Context, refreshToken 
 		return nil, err
 	}
 
-	return &model.AuthPayload{
+	return &model.RefreshAccessTokenPayload{
 		AccessToken: accessTokenString,
-		TokenType:   "Bearer",
 		ExpiresIn:   accessToken.Expiration(),
 	}, nil
 }
