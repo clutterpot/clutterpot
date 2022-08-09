@@ -33,3 +33,11 @@ input FileUpdateInput {
   "Filename"
   filename: String
 }
+
+type DeleteFilePayload {
+  "Unique file ID"
+  id: ID!
+
+  "Time of deletion"
+  deletedAt: Time!
+}

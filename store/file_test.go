@@ -15,6 +15,7 @@ func TestFileStore(t *testing.T) {
 
 	t.Run("Create", func(t *testing.T) { testFileStore_Create(t, store) })
 	t.Run("Update", func(t *testing.T) { testFileStore_Update(t, store) })
+	t.Run("SoftDelete", func(t *testing.T) { testFileStore_SoftDelete(t, store) })
 	t.Run("Delete", func(t *testing.T) { testFileStore_Delete(t, store) })
 	t.Run("GetByID", func(t *testing.T) { testFileStore_GetByID(t, store) })
 }
@@ -42,6 +43,19 @@ func testFileStore_Update(t *testing.T, s *Store) {
 	assert.NotEqual(t, file.UpdatedAt, updatedFile.UpdatedAt, "file updated at should have been updated")
 
 	_, err = s.File.Update(model.NewID(), model.FileUpdateInput{Filename: &filename})
+	require.Error(t, err, "an error should have been returned")
+	assert.EqualError(t, err, "file not found", "'file not found' error should have been returned")
+}
+
+func testFileStore_SoftDelete(t *testing.T, s *Store) {
+	file, err := s.File.Create(model.FileInput{Filename: "test"})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
+
+	_, err = s.File.SoftDelete(file.ID)
+	require.NoError(t, err, "cannot soft delete file")
+
+	_, err = s.File.SoftDelete(model.NewID())
 	require.Error(t, err, "an error should have been returned")
 	assert.EqualError(t, err, "file not found", "'file not found' error should have been returned")
 }

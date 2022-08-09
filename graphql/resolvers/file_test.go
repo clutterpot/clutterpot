@@ -33,6 +33,7 @@ func TestFileResolvers(t *testing.T) {
 	t.Run("File", func(t *testing.T) { testFileResolvers_File(t, gqlClient, store) })
 	t.Run("CreateFile", func(t *testing.T) { testFileResolvers_CreateFile(t, gqlClient, store, auth) })
 	t.Run("UpdateFile", func(t *testing.T) { testFileResolvers_UpdateFile(t, gqlClient, store, auth) })
+	t.Run("DeleteFile", func(t *testing.T) { testFileResolvers_DeleteFile(t, gqlClient, store, auth) })
 }
 
 func testFileResolvers_File(t *testing.T, c *client.Client, s *store.Store) {
@@ -133,4 +134,38 @@ func testFileResolvers_UpdateFile(t *testing.T, c *client.Client, s *store.Store
 		"filename": filename,
 	}), client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
 	require.Error(t, err, "'file not found' error should have been returned")
+}
+
+func testFileResolvers_DeleteFile(t *testing.T, c *client.Client, s *store.Store, a *auth.Auth) {
+	user, err := s.User.Create(model.UserInput{
+		Username: "test_" + model.NewID(),
+		Email:    "test_" + model.NewID() + "@example.com",
+		Password: "Password1!",
+	})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
+
+	_, token, err := a.NewAccessToken(&auth.Claims{UserID: user.ID, Username: user.Username, Kind: user.Kind})
+	require.NoError(t, err)
+
+	file, err := s.File.Create(model.FileInput{Filename: "test_" + model.NewID()})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
+
+	query := `
+		mutation deleteFile($id: ID!) {
+			deleteFile(id: $id) {
+				id
+			}
+		}
+		`
+
+	var resp struct {
+		DeleteFile struct {
+			ID string
+		}
+	}
+	err = c.Post(query, &resp, client.Var("id", file.ID),
+		client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
+	require.NoError(t, err, "cannot delete file")
 }

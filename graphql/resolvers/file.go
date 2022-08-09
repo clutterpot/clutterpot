@@ -25,3 +25,13 @@ func (r *mutationResolver) UpdateFile(ctx context.Context, id string, input mode
 
 	return r.Store.File.Update(id, input)
 }
+
+func (r *mutationResolver) DeleteFile(ctx context.Context, id string) (*model.DeleteFilePayload, error) {
+	payload, err := r.Store.File.SoftDelete(id)
+	if err != nil {
+		return nil, err
+	}
+	payload.ID = id
+
+	return payload, nil
+}

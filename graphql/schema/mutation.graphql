@@ -27,4 +27,7 @@ type Mutation {
 
   "Update file with ID and FileUpdateInput"
   updateFile(id: ID!, input: FileUpdateInput!): File @isKind(kind: USER) @auth
+
+  # "Delete file with ID"
+  deleteFile(id: ID!): DeleteFilePayload @isKind(kind: USER) @auth
 }

@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+type DeleteFilePayload struct {
+	// Unique file ID
+	ID string `json:"id"`
+	// Time of deletion
+	DeletedAt time.Time `json:"deletedAt"`
+}
+
 type File struct {
 	// Unique file ID
 	ID string `json:"id"`

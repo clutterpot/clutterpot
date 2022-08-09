@@ -46,6 +46,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	DeleteFilePayload struct {
+		DeletedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+	}
+
 	File struct {
 		CreatedAt func(childComplexity int) int
 		DeletedAt func(childComplexity int) int
@@ -66,6 +71,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateFile         func(childComplexity int, input model.FileInput) int
 		CreateUser         func(childComplexity int, input model.UserInput) int
+		DeleteFile         func(childComplexity int, id string) int
 		Login              func(childComplexity int, email string, password string) int
 		RefreshAccessToken func(childComplexity int, refreshToken string) int
 		RevokeRefreshToken func(childComplexity int, refreshToken string) int
@@ -108,6 +114,7 @@ type MutationResolver interface {
 	UpdateUser(ctx context.Context, id *string, input model.UserUpdateInput) (*model.User, error)
 	CreateFile(ctx context.Context, input model.FileInput) (*model.File, error)
 	UpdateFile(ctx context.Context, id string, input model.FileUpdateInput) (*model.File, error)
+	DeleteFile(ctx context.Context, id string) (*model.DeleteFilePayload, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
@@ -128,6 +135,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "DeleteFilePayload.deletedAt":
+		if e.complexity.DeleteFilePayload.DeletedAt == nil {
+			break
+		}
+
+		return e.complexity.DeleteFilePayload.DeletedAt(childComplexity), true
+
+	case "DeleteFilePayload.id":
+		if e.complexity.DeleteFilePayload.ID == nil {
+			break
+		}
+
+		return e.complexity.DeleteFilePayload.ID(childComplexity), true
 
 	case "File.createdAt":
 		if e.complexity.File.CreatedAt == nil {
@@ -229,6 +250,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.UserInput)), true
+
+	case "Mutation.deleteFile":
+		if e.complexity.Mutation.DeleteFile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteFile_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteFile(childComplexity, args["id"].(string)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -534,6 +567,14 @@ input FileUpdateInput {
   "Filename"
   filename: String
 }
+
+type DeleteFilePayload {
+  "Unique file ID"
+  id: ID!
+
+  "Time of deletion"
+  deletedAt: Time!
+}
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
   # Auth
@@ -564,6 +605,9 @@ input FileUpdateInput {
 
   "Update file with ID and FileUpdateInput"
   updateFile(id: ID!, input: FileUpdateInput!): File @isKind(kind: USER) @auth
+
+  # "Delete file with ID"
+  deleteFile(id: ID!): DeleteFilePayload @isKind(kind: USER) @auth
 }
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `type Query {
@@ -707,6 +751,21 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteFile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -913,6 +972,94 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _DeleteFilePayload_id(ctx context.Context, field graphql.CollectedField, obj *model.DeleteFilePayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeleteFilePayload_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeleteFilePayload_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeleteFilePayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeleteFilePayload_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.DeleteFilePayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeleteFilePayload_deletedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeleteFilePayload_deletedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeleteFilePayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _File_id(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_File_id(ctx, field)
@@ -1935,6 +2082,94 @@ func (ec *executionContext) fieldContext_Mutation_updateFile(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteFile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteFile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteFile(rctx, fc.Args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			kind, err := ec.unmarshalNUserKind2githubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, "USER")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.IsKind == nil {
+				return nil, errors.New("directive isKind is not implemented")
+			}
+			return ec.directives.IsKind(ctx, nil, directive0, kind)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive1)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.DeleteFilePayload); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/clutterpot/clutterpot/model.DeleteFilePayload`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DeleteFilePayload)
+	fc.Result = res
+	return ec.marshalODeleteFilePayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐDeleteFilePayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DeleteFilePayload_id(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_DeleteFilePayload_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DeleteFilePayload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -4681,6 +4916,41 @@ func (ec *executionContext) unmarshalInputUserUpdateInput(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
+var deleteFilePayloadImplementors = []string{"DeleteFilePayload"}
+
+func (ec *executionContext) _DeleteFilePayload(ctx context.Context, sel ast.SelectionSet, obj *model.DeleteFilePayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deleteFilePayloadImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeleteFilePayload")
+		case "id":
+
+			out.Values[i] = ec._DeleteFilePayload_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deletedAt":
+
+			out.Values[i] = ec._DeleteFilePayload_deletedAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var fileImplementors = []string{"File"}
 
 func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj *model.File) graphql.Marshaler {
@@ -4856,6 +5126,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateFile(ctx, field)
+			})
+
+		case "deleteFile":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteFile(ctx, field)
 			})
 
 		default:
@@ -5792,6 +6068,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalODeleteFilePayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐDeleteFilePayload(ctx context.Context, sel ast.SelectionSet, v *model.DeleteFilePayload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DeleteFilePayload(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOFile2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFile(ctx context.Context, sel ast.SelectionSet, v *model.File) graphql.Marshaler {
