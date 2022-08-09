@@ -1,12 +1,28 @@
 type LoginPayload {
+  "Access token"
   accessToken: String!
+
+  "Time the access token expires"
   expiresIn: Time!
+
+  "Refresh token"
   refreshToken: String!
 }
 
 type RefreshAccessTokenPayload {
+  "Access token"
   accessToken: String!
+
+  "Time the access token expires"
   expiresIn: Time!
+}
+
+type RevokeRefreshTokenPayload {
+  "Refresh token"
+  refreshToken: String!
+
+  "Time of deletion"
+  deletedAt: Time!
 }
 
 directive @auth on FIELD_DEFINITION

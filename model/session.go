@@ -7,6 +7,7 @@ type Session struct {
 	UserID    string
 	CreatedAt time.Time
 	ExpiresAt time.Time
+	DeletedAt *time.Time
 }
 
 type SessionUser struct {

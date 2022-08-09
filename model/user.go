@@ -3,21 +3,9 @@ package model
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
-
-type User struct {
-	ID          string    `json:"id"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	Kind        UserKind  `json:"kind"`
-	DisplayName *string   `json:"displayName"`
-	Bio         *string   `json:"bio"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-}
 
 type UserKind int8
 

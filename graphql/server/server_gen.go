@@ -68,6 +68,7 @@ type ComplexityRoot struct {
 		CreateUser         func(childComplexity int, input model.UserInput) int
 		Login              func(childComplexity int, email string, password string) int
 		RefreshAccessToken func(childComplexity int, refreshToken string) int
+		RevokeRefreshToken func(childComplexity int, refreshToken string) int
 		UpdateFile         func(childComplexity int, id string, input model.FileUpdateInput) int
 		UpdateUser         func(childComplexity int, id *string, input model.UserUpdateInput) int
 	}
@@ -80,6 +81,11 @@ type ComplexityRoot struct {
 	RefreshAccessTokenPayload struct {
 		AccessToken func(childComplexity int) int
 		ExpiresIn   func(childComplexity int) int
+	}
+
+	RevokeRefreshTokenPayload struct {
+		DeletedAt    func(childComplexity int) int
+		RefreshToken func(childComplexity int) int
 	}
 
 	User struct {
@@ -97,6 +103,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, email string, password string) (*model.LoginPayload, error)
 	RefreshAccessToken(ctx context.Context, refreshToken string) (*model.RefreshAccessTokenPayload, error)
+	RevokeRefreshToken(ctx context.Context, refreshToken string) (*model.RevokeRefreshTokenPayload, error)
 	CreateUser(ctx context.Context, input model.UserInput) (*model.User, error)
 	UpdateUser(ctx context.Context, id *string, input model.UserUpdateInput) (*model.User, error)
 	CreateFile(ctx context.Context, input model.FileInput) (*model.File, error)
@@ -247,6 +254,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RefreshAccessToken(childComplexity, args["refreshToken"].(string)), true
 
+	case "Mutation.revokeRefreshToken":
+		if e.complexity.Mutation.RevokeRefreshToken == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_revokeRefreshToken_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RevokeRefreshToken(childComplexity, args["refreshToken"].(string)), true
+
 	case "Mutation.updateFile":
 		if e.complexity.Mutation.UpdateFile == nil {
 			break
@@ -308,6 +327,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RefreshAccessTokenPayload.ExpiresIn(childComplexity), true
+
+	case "RevokeRefreshTokenPayload.deletedAt":
+		if e.complexity.RevokeRefreshTokenPayload.DeletedAt == nil {
+			break
+		}
+
+		return e.complexity.RevokeRefreshTokenPayload.DeletedAt(childComplexity), true
+
+	case "RevokeRefreshTokenPayload.refreshToken":
+		if e.complexity.RevokeRefreshTokenPayload.RefreshToken == nil {
+			break
+		}
+
+		return e.complexity.RevokeRefreshTokenPayload.RefreshToken(childComplexity), true
 
 	case "User.bio":
 		if e.complexity.User.Bio == nil {
@@ -438,14 +471,30 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../schema/auth.graphql", Input: `type LoginPayload {
+  "Access token"
   accessToken: String!
+
+  "Time the access token expires"
   expiresIn: Time!
+
+  "Refresh token"
   refreshToken: String!
 }
 
 type RefreshAccessTokenPayload {
+  "Access token"
   accessToken: String!
+
+  "Time the access token expires"
   expiresIn: Time!
+}
+
+type RevokeRefreshTokenPayload {
+  "Refresh token"
+  refreshToken: String!
+
+  "Time of deletion"
+  deletedAt: Time!
 }
 
 directive @auth on FIELD_DEFINITION
@@ -464,7 +513,7 @@ directive @auth on FIELD_DEFINITION
   extension: String!
 
   "File size in bytes"
-  size: Int!
+  size: Int64!
 
   "Time of creation"
   createdAt: Time!
@@ -494,6 +543,9 @@ input FileUpdateInput {
 
   "Refresh access token with refresh token"
   refreshAccessToken(refreshToken: String!): RefreshAccessTokenPayload
+
+  "Revoke refresh token"
+  revokeRefreshToken(refreshToken: String!): RevokeRefreshTokenPayload
 
   # User
 
@@ -532,6 +584,7 @@ input FileUpdateInput {
 }
 
 scalar Time
+scalar Int64
 `, BuiltIn: false},
 	{Name: "../schema/user.graphql", Input: `type User {
   "Unique user ID"
@@ -682,6 +735,21 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 }
 
 func (ec *executionContext) field_Mutation_refreshAccessToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["refreshToken"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("refreshToken"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["refreshToken"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_revokeRefreshToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1050,7 +1118,7 @@ func (ec *executionContext) _File_size(ctx context.Context, field graphql.Collec
 	}
 	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
+	return ec.marshalNInt642int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_File_size(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1060,7 +1128,7 @@ func (ec *executionContext) fieldContext_File_size(ctx context.Context, field gr
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type Int64 does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1439,6 +1507,64 @@ func (ec *executionContext) fieldContext_Mutation_refreshAccessToken(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_refreshAccessToken_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_revokeRefreshToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_revokeRefreshToken(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RevokeRefreshToken(rctx, fc.Args["refreshToken"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RevokeRefreshTokenPayload)
+	fc.Result = res
+	return ec.marshalORevokeRefreshTokenPayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐRevokeRefreshTokenPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_revokeRefreshToken(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "refreshToken":
+				return ec.fieldContext_RevokeRefreshTokenPayload_refreshToken(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_RevokeRefreshTokenPayload_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RevokeRefreshTokenPayload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_revokeRefreshToken_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -2162,6 +2288,94 @@ func (ec *executionContext) _RefreshAccessTokenPayload_expiresIn(ctx context.Con
 func (ec *executionContext) fieldContext_RefreshAccessTokenPayload_expiresIn(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "RefreshAccessTokenPayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RevokeRefreshTokenPayload_refreshToken(ctx context.Context, field graphql.CollectedField, obj *model.RevokeRefreshTokenPayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RevokeRefreshTokenPayload_refreshToken(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RefreshToken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RevokeRefreshTokenPayload_refreshToken(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RevokeRefreshTokenPayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RevokeRefreshTokenPayload_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.RevokeRefreshTokenPayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RevokeRefreshTokenPayload_deletedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RevokeRefreshTokenPayload_deletedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RevokeRefreshTokenPayload",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -4614,6 +4828,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_refreshAccessToken(ctx, field)
 			})
 
+		case "revokeRefreshToken":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_revokeRefreshToken(ctx, field)
+			})
+
 		case "createUser":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -4751,6 +4971,41 @@ func (ec *executionContext) _RefreshAccessTokenPayload(ctx context.Context, sel 
 		case "expiresIn":
 
 			out.Values[i] = ec._RefreshAccessTokenPayload_expiresIn(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var revokeRefreshTokenPayloadImplementors = []string{"RevokeRefreshTokenPayload"}
+
+func (ec *executionContext) _RevokeRefreshTokenPayload(ctx context.Context, sel ast.SelectionSet, obj *model.RevokeRefreshTokenPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, revokeRefreshTokenPayloadImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RevokeRefreshTokenPayload")
+		case "refreshToken":
+
+			out.Values[i] = ec._RevokeRefreshTokenPayload_refreshToken(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deletedAt":
+
+			out.Values[i] = ec._RevokeRefreshTokenPayload_deletedAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -5195,12 +5450,12 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
+func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v interface{}) (int64, error) {
 	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+func (ec *executionContext) marshalNInt642int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
 	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -5574,6 +5829,13 @@ func (ec *executionContext) marshalORefreshAccessTokenPayload2ᚖgithubᚗcomᚋ
 		return graphql.Null
 	}
 	return ec._RefreshAccessTokenPayload(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORevokeRefreshTokenPayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐRevokeRefreshTokenPayload(ctx context.Context, sel ast.SelectionSet, v *model.RevokeRefreshTokenPayload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RevokeRefreshTokenPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

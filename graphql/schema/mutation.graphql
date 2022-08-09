@@ -7,6 +7,9 @@ type Mutation {
   "Refresh access token with refresh token"
   refreshAccessToken(refreshToken: String!): RefreshAccessTokenPayload
 
+  "Revoke refresh token"
+  revokeRefreshToken(refreshToken: String!): RevokeRefreshTokenPayload
+
   # User
 
   "Create user with UserInput"

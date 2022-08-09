@@ -12,7 +12,7 @@ type File {
   extension: String!
 
   "File size in bytes"
-  size: Int!
+  size: Int64!
 
   "Time of creation"
   createdAt: Time!

@@ -68,3 +68,18 @@ func (r *mutationResolver) RefreshAccessToken(ctx context.Context, refreshToken 
 		ExpiresIn:   accessToken.Expiration(),
 	}, nil
 }
+
+func (r *mutationResolver) RevokeRefreshToken(ctx context.Context, refreshToken string) (*model.RevokeRefreshTokenPayload, error) {
+	_, claims, err := r.Auth.Decode(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := r.Store.Session.SoftDelete(claims["sid"].(string))
+	if err != nil {
+		return nil, err
+	}
+	payload.RefreshToken = refreshToken
+
+	return payload, nil
+}
