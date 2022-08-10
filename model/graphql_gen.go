@@ -35,8 +35,8 @@ type File struct {
 type LoginPayload struct {
 	// Access token
 	AccessToken string `json:"accessToken"`
-	// Time the access token expires
-	ExpiresIn time.Time `json:"expiresIn"`
+	// Time of expiration
+	ExpiresAt time.Time `json:"expiresAt"`
 	// Refresh token
 	RefreshToken string `json:"refreshToken"`
 }
@@ -44,8 +44,8 @@ type LoginPayload struct {
 type RefreshAccessTokenPayload struct {
 	// Access token
 	AccessToken string `json:"accessToken"`
-	// Time the access token expires
-	ExpiresIn time.Time `json:"expiresIn"`
+	// Time of expiration
+	ExpiresAt time.Time `json:"expiresAt"`
 }
 
 type RevokeRefreshTokenPayload struct {

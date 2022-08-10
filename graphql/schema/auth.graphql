@@ -2,8 +2,8 @@ type LoginPayload {
   "Access token"
   accessToken: String!
 
-  "Time the access token expires"
-  expiresIn: Time!
+  "Time of expiration"
+  expiresAt: Time!
 
   "Refresh token"
   refreshToken: String!
@@ -13,8 +13,8 @@ type RefreshAccessTokenPayload {
   "Access token"
   accessToken: String!
 
-  "Time the access token expires"
-  expiresIn: Time!
+  "Time of expiration"
+  expiresAt: Time!
 }
 
 type RevokeRefreshTokenPayload {

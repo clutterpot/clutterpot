@@ -38,7 +38,7 @@ func (r *mutationResolver) Login(ctx context.Context, email, password string) (*
 
 	return &model.LoginPayload{
 		AccessToken:  accessTokenString,
-		ExpiresIn:    accessToken.Expiration(),
+		ExpiresAt:    accessToken.Expiration(),
 		RefreshToken: refreshTokenString,
 	}, nil
 }
@@ -65,7 +65,7 @@ func (r *mutationResolver) RefreshAccessToken(ctx context.Context, refreshToken 
 
 	return &model.RefreshAccessTokenPayload{
 		AccessToken: accessTokenString,
-		ExpiresIn:   accessToken.Expiration(),
+		ExpiresAt:   accessToken.Expiration(),
 	}, nil
 }
 

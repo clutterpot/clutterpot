@@ -64,7 +64,7 @@ type ComplexityRoot struct {
 
 	LoginPayload struct {
 		AccessToken  func(childComplexity int) int
-		ExpiresIn    func(childComplexity int) int
+		ExpiresAt    func(childComplexity int) int
 		RefreshToken func(childComplexity int) int
 	}
 
@@ -86,7 +86,7 @@ type ComplexityRoot struct {
 
 	RefreshAccessTokenPayload struct {
 		AccessToken func(childComplexity int) int
-		ExpiresIn   func(childComplexity int) int
+		ExpiresAt   func(childComplexity int) int
 	}
 
 	RevokeRefreshTokenPayload struct {
@@ -213,12 +213,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LoginPayload.AccessToken(childComplexity), true
 
-	case "LoginPayload.expiresIn":
-		if e.complexity.LoginPayload.ExpiresIn == nil {
+	case "LoginPayload.expiresAt":
+		if e.complexity.LoginPayload.ExpiresAt == nil {
 			break
 		}
 
-		return e.complexity.LoginPayload.ExpiresIn(childComplexity), true
+		return e.complexity.LoginPayload.ExpiresAt(childComplexity), true
 
 	case "LoginPayload.refreshToken":
 		if e.complexity.LoginPayload.RefreshToken == nil {
@@ -354,12 +354,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RefreshAccessTokenPayload.AccessToken(childComplexity), true
 
-	case "RefreshAccessTokenPayload.expiresIn":
-		if e.complexity.RefreshAccessTokenPayload.ExpiresIn == nil {
+	case "RefreshAccessTokenPayload.expiresAt":
+		if e.complexity.RefreshAccessTokenPayload.ExpiresAt == nil {
 			break
 		}
 
-		return e.complexity.RefreshAccessTokenPayload.ExpiresIn(childComplexity), true
+		return e.complexity.RefreshAccessTokenPayload.ExpiresAt(childComplexity), true
 
 	case "RevokeRefreshTokenPayload.deletedAt":
 		if e.complexity.RevokeRefreshTokenPayload.DeletedAt == nil {
@@ -507,8 +507,8 @@ var sources = []*ast.Source{
   "Access token"
   accessToken: String!
 
-  "Time the access token expires"
-  expiresIn: Time!
+  "Time of expiration"
+  expiresAt: Time!
 
   "Refresh token"
   refreshToken: String!
@@ -518,8 +518,8 @@ type RefreshAccessTokenPayload {
   "Access token"
   accessToken: String!
 
-  "Time the access token expires"
-  expiresIn: Time!
+  "Time of expiration"
+  expiresAt: Time!
 }
 
 type RevokeRefreshTokenPayload {
@@ -1454,8 +1454,8 @@ func (ec *executionContext) fieldContext_LoginPayload_accessToken(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _LoginPayload_expiresIn(ctx context.Context, field graphql.CollectedField, obj *model.LoginPayload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LoginPayload_expiresIn(ctx, field)
+func (ec *executionContext) _LoginPayload_expiresAt(ctx context.Context, field graphql.CollectedField, obj *model.LoginPayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LoginPayload_expiresAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1468,7 +1468,7 @@ func (ec *executionContext) _LoginPayload_expiresIn(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ExpiresIn, nil
+		return obj.ExpiresAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1485,7 +1485,7 @@ func (ec *executionContext) _LoginPayload_expiresIn(ctx context.Context, field g
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_LoginPayload_expiresIn(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoginPayload_expiresAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoginPayload",
 		Field:      field,
@@ -1580,8 +1580,8 @@ func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, fie
 			switch field.Name {
 			case "accessToken":
 				return ec.fieldContext_LoginPayload_accessToken(ctx, field)
-			case "expiresIn":
-				return ec.fieldContext_LoginPayload_expiresIn(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_LoginPayload_expiresAt(ctx, field)
 			case "refreshToken":
 				return ec.fieldContext_LoginPayload_refreshToken(ctx, field)
 			}
@@ -1640,8 +1640,8 @@ func (ec *executionContext) fieldContext_Mutation_refreshAccessToken(ctx context
 			switch field.Name {
 			case "accessToken":
 				return ec.fieldContext_RefreshAccessTokenPayload_accessToken(ctx, field)
-			case "expiresIn":
-				return ec.fieldContext_RefreshAccessTokenPayload_expiresIn(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_RefreshAccessTokenPayload_expiresAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RefreshAccessTokenPayload", field.Name)
 		},
@@ -2489,8 +2489,8 @@ func (ec *executionContext) fieldContext_RefreshAccessTokenPayload_accessToken(c
 	return fc, nil
 }
 
-func (ec *executionContext) _RefreshAccessTokenPayload_expiresIn(ctx context.Context, field graphql.CollectedField, obj *model.RefreshAccessTokenPayload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RefreshAccessTokenPayload_expiresIn(ctx, field)
+func (ec *executionContext) _RefreshAccessTokenPayload_expiresAt(ctx context.Context, field graphql.CollectedField, obj *model.RefreshAccessTokenPayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RefreshAccessTokenPayload_expiresAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2503,7 +2503,7 @@ func (ec *executionContext) _RefreshAccessTokenPayload_expiresIn(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ExpiresIn, nil
+		return obj.ExpiresAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2520,7 +2520,7 @@ func (ec *executionContext) _RefreshAccessTokenPayload_expiresIn(ctx context.Con
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_RefreshAccessTokenPayload_expiresIn(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_RefreshAccessTokenPayload_expiresAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "RefreshAccessTokenPayload",
 		Field:      field,
@@ -5042,9 +5042,9 @@ func (ec *executionContext) _LoginPayload(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "expiresIn":
+		case "expiresAt":
 
-			out.Values[i] = ec._LoginPayload_expiresIn(ctx, field, obj)
+			out.Values[i] = ec._LoginPayload_expiresAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -5244,9 +5244,9 @@ func (ec *executionContext) _RefreshAccessTokenPayload(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "expiresIn":
+		case "expiresAt":
 
-			out.Values[i] = ec._RefreshAccessTokenPayload_expiresIn(ctx, field, obj)
+			out.Values[i] = ec._RefreshAccessTokenPayload_expiresAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
