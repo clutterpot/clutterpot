@@ -1,4 +1,15 @@
 type Tag {
+  "Unique tag ID"
+  id: ID!
+
   "Unique tag name"
   name: String!
+}
+
+input TagInput {
+  "Tag name"
+  name: String!
+
+  "Determines whether tag will be accessible for other users"
+  private: Boolean! = false
 }

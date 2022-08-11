@@ -30,4 +30,9 @@ type Mutation {
 
   # "Delete file with ID"
   deleteFile(id: ID!): DeleteFilePayload @isKind(kind: USER) @auth
+
+  # Tag
+
+  "Create tag with TagInput"
+  createTag(input: TagInput!): Tag @isKind(kind: USER) @auth
 }

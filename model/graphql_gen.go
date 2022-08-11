@@ -58,6 +58,8 @@ type RevokeRefreshTokenPayload struct {
 }
 
 type Tag struct {
+	// Unique tag ID
+	ID string `json:"id"`
 	// Unique tag name
 	Name string `json:"name"`
 }
