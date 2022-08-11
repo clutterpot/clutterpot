@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS tags(
+    id char(20) PRIMARY KEY NOT NULL,
+    name varchar(32) UNIQUE NOT NULL
+);

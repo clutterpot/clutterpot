@@ -64,3 +64,7 @@ models:
   Int64:
     model:
       - github.com/99designs/gqlgen/graphql.Int64
+  File:
+    fields:
+      tags:
+        resolver: true

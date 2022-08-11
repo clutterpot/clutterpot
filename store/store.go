@@ -5,17 +5,17 @@ import (
 )
 
 type Store struct {
-	db      *sqlx.DB
 	User    *userStore
 	File    *fileStore
+	Tag     *tagStore
 	Session *sessionStore
 }
 
 func New(db *sqlx.DB) *Store {
 	return &Store{
-		db:      db,
 		User:    newUserStore(db),
 		File:    newFileStore(db),
+		Tag:     newTagStore(db),
 		Session: newSessionStore(db),
 	}
 }

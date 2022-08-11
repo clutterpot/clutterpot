@@ -26,3 +26,7 @@ func (r *Resolver) Query() server.QueryResolver { return &queryResolver{r} }
 type mutationResolver struct{ *Resolver }
 
 func (r *Resolver) Mutation() server.MutationResolver { return &mutationResolver{r} }
+
+type fileResolver struct{ *Resolver }
+
+func (r *Resolver) File() server.FileResolver { return &fileResolver{r} }

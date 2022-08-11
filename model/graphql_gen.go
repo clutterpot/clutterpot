@@ -24,6 +24,8 @@ type File struct {
 	Extension string `json:"extension"`
 	// File size in bytes
 	Size int64 `json:"size"`
+	// File tags
+	Tags []*Tag `json:"tags"`
 	// Time of creation
 	CreatedAt time.Time `json:"createdAt"`
 	// Time of last update
@@ -53,6 +55,11 @@ type RevokeRefreshTokenPayload struct {
 	RefreshToken string `json:"refreshToken"`
 	// Time of deletion
 	DeletedAt time.Time `json:"deletedAt"`
+}
+
+type Tag struct {
+	// Unique tag name
+	Name string `json:"name"`
 }
 
 type User struct {

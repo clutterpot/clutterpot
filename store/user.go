@@ -7,7 +7,6 @@ import (
 	"github.com/clutterpot/clutterpot/model"
 
 	sq "github.com/Masterminds/squirrel"
-
 	"github.com/jmoiron/sqlx"
 )
 

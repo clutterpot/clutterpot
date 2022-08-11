@@ -35,3 +35,7 @@ func (r *mutationResolver) DeleteFile(ctx context.Context, id string) (*model.De
 
 	return payload, nil
 }
+
+func (r *fileResolver) Tags(ctx context.Context, obj *model.File) ([]*model.Tag, error) {
+	return r.Store.Tag.GetByFileID(obj.ID)
+}
