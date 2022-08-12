@@ -30,6 +30,9 @@ type File {
 input FileInput {
   "Filename"
   filename: String!
+
+  "IDs of tags which the file will be tagged"
+  tags: [ID!]
 }
 
 input FileUpdateInput {

@@ -21,14 +21,41 @@ func newFileStore(db *sqlx.DB) *fileStore {
 func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 	var f model.File
 
-	if err := sq.Insert("files").SetMap(sq.Eq{
+	/*
+		Query form is:
+
+		WITH f AS (
+			INSERT INTO files(<columns>) VALUES ( <values> ) RETURNING <columns>
+		)[, ft AS (
+			INSERT INTO file_tags(<columns>) VALUES ( ( SELECT id FROM f), unnest(array [<values>]) )
+		) ] SELECT <columns> FROM f
+
+		All insert queries are appended as prefixes due to the query builder limitations
+	*/
+	query := sq.Select("id", "filename", "mime_type", "extension", "size", "created_at", "updated_at", "deleted_at").
+		From("f").Prefix("WITH f AS (?)", sq.Insert("files").SetMap(sq.Eq{
 		"id":        model.NewID(),
 		"filename":  input.Filename,
 		"mime_type": "test",
 		"extension": ".test",
 		"size":      0,
-	}).Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at").
-		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
+	}).Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at"))
+
+	if len(input.Tags) > 0 {
+		// Convert []string to []any
+		tagsIDs := make([]any, len(input.Tags))
+		for i, tagID := range input.Tags {
+			tagsIDs[i] = tagID
+		}
+
+		// Append file tags insert query
+		query = query.Prefix(", ft AS (?)", sq.Insert("file_tags").SetMap(sq.Eq{
+			"file_id": sq.Expr("(?)", sq.Select("id").From("f")),
+			"tag_id":  sq.Expr(fmt.Sprintf("unnest(array[%s])", sq.Placeholders(len(input.Tags))), tagsIDs...),
+		}))
+	}
+
+	if err := query.PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
 		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
 		return nil, fmt.Errorf("an error occurred while creating a file")
 	}
