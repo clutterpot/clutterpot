@@ -2,10 +2,10 @@ type Query {
   # User
 
   "Get user by ID"
-  user(id: ID!): User
+  user("User ID" id: ID!): User
 
   # File
 
   "Get file by ID"
-  file(id: ID!): File
+  file("File ID" id: ID!): File
 }

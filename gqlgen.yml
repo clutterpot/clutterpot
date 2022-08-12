@@ -68,3 +68,9 @@ models:
     fields:
       tags:
         resolver: true
+  RemoveTagsFromFilePayload:
+    fields:
+      file:
+        resolver: true
+      tags:
+        resolver: true

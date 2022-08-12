@@ -50,3 +50,11 @@ type DeleteFilePayload {
   "Time of deletion"
   deletedAt: Time!
 }
+
+type RemoveTagsFromFilePayload {
+  "Updated file"
+  file: File!
+
+  "Removed tags"
+  tags: [Tag!]!
+}

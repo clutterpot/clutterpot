@@ -2,7 +2,13 @@ type Mutation {
   # Auth
 
   "Sign in with email and password"
-  login(email: String!, password: String!): LoginPayload
+  login(
+    "User email"
+    email: String!
+
+    "User password"
+    password: String!
+  ): LoginPayload
 
   "Refresh access token with refresh token"
   refreshAccessToken(refreshToken: String!): RefreshAccessTokenPayload
@@ -16,9 +22,11 @@ type Mutation {
   createUser(input: UserInput!): User
 
   "Update user with ID and UserUpdateInput"
-  updateUser(id: ID @isKind(kind: ADMIN), input: UserUpdateInput!): User
-    @isKind(kind: USER)
-    @auth
+  updateUser(
+    "User ID"
+    id: ID @isKind(kind: ADMIN)
+    input: UserUpdateInput!
+  ): User @isKind(kind: USER) @auth
 
   # File
 
@@ -26,10 +34,21 @@ type Mutation {
   createFile(input: FileInput!): File @isKind(kind: USER) @auth
 
   "Update file with ID and FileUpdateInput"
-  updateFile(id: ID!, input: FileUpdateInput!): File @isKind(kind: USER) @auth
+  updateFile("File ID" id: ID!, input: FileUpdateInput!): File
+    @isKind(kind: USER)
+    @auth
 
   # "Delete file with ID"
-  deleteFile(id: ID!): DeleteFilePayload @isKind(kind: USER) @auth
+  deleteFile("File ID" id: ID!): DeleteFilePayload @isKind(kind: USER) @auth
+
+  "Remove tags from the file with file ID and tags IDs"
+  removeTagsFromFile(
+    "File ID"
+    id: ID!
+
+    "Tag IDs"
+    tagIDs: [ID!]!
+  ): RemoveTagsFromFilePayload @isKind(kind: USER) @auth
 
   # Tag
 

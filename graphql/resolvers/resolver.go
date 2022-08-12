@@ -30,3 +30,9 @@ func (r *Resolver) Mutation() server.MutationResolver { return &mutationResolver
 type fileResolver struct{ *Resolver }
 
 func (r *Resolver) File() server.FileResolver { return &fileResolver{r} }
+
+type removeTagsFromFilePayloadResolver struct{ *Resolver }
+
+func (r *Resolver) RemoveTagsFromFilePayload() server.RemoveTagsFromFilePayloadResolver {
+	return &removeTagsFromFilePayloadResolver{r}
+}

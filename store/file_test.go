@@ -17,6 +17,7 @@ func TestFileStore(t *testing.T) {
 	t.Run("Update", func(t *testing.T) { testFileStore_Update(t, store) })
 	t.Run("SoftDelete", func(t *testing.T) { testFileStore_SoftDelete(t, store) })
 	t.Run("Delete", func(t *testing.T) { testFileStore_Delete(t, store) })
+	t.Run("RemoveTags", func(t *testing.T) { testFileStore_RemoveTags(t, store) })
 	t.Run("GetByID", func(t *testing.T) { testFileStore_GetByID(t, store) })
 }
 
@@ -65,6 +66,19 @@ func testFileStore_Delete(t *testing.T, s *Store) {
 	require.NoError(t, err)
 
 	require.NoError(t, s.File.Delete(file.ID), "cannot delete file")
+}
+
+func testFileStore_RemoveTags(t *testing.T, s *Store) {
+	tag, err := s.Tag.Create(model.TagInput{Name: "test_" + model.NewID()})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.Tag.Delete(tag.ID)) }()
+
+	file, err := s.File.Create(model.FileInput{Filename: "test", Tags: &[]string{tag.ID}})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
+
+	_, err = s.File.RemoveTags(file.ID, []string{tag.ID})
+	require.NoError(t, err, "cannot remove tags from file")
 }
 
 func testFileStore_GetByID(t *testing.T, s *Store) {

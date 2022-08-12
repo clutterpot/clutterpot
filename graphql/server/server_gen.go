@@ -40,6 +40,7 @@ type ResolverRoot interface {
 	File() FileResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	RemoveTagsFromFilePayload() RemoveTagsFromFilePayloadResolver
 }
 
 type DirectiveRoot struct {
@@ -78,6 +79,7 @@ type ComplexityRoot struct {
 		DeleteFile         func(childComplexity int, id string) int
 		Login              func(childComplexity int, email string, password string) int
 		RefreshAccessToken func(childComplexity int, refreshToken string) int
+		RemoveTagsFromFile func(childComplexity int, id string, tagIDs []string) int
 		RevokeRefreshToken func(childComplexity int, refreshToken string) int
 		UpdateFile         func(childComplexity int, id string, input model.FileUpdateInput) int
 		UpdateUser         func(childComplexity int, id *string, input model.UserUpdateInput) int
@@ -91,6 +93,11 @@ type ComplexityRoot struct {
 	RefreshAccessTokenPayload struct {
 		AccessToken func(childComplexity int) int
 		ExpiresAt   func(childComplexity int) int
+	}
+
+	RemoveTagsFromFilePayload struct {
+		File func(childComplexity int) int
+		Tags func(childComplexity int) int
 	}
 
 	RevokeRefreshTokenPayload struct {
@@ -127,11 +134,16 @@ type MutationResolver interface {
 	CreateFile(ctx context.Context, input model.FileInput) (*model.File, error)
 	UpdateFile(ctx context.Context, id string, input model.FileUpdateInput) (*model.File, error)
 	DeleteFile(ctx context.Context, id string) (*model.DeleteFilePayload, error)
+	RemoveTagsFromFile(ctx context.Context, id string, tagIDs []string) (*model.RemoveTagsFromFilePayload, error)
 	CreateTag(ctx context.Context, input model.TagInput) (*model.Tag, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
 	File(ctx context.Context, id string) (*model.File, error)
+}
+type RemoveTagsFromFilePayloadResolver interface {
+	File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error)
+	Tags(ctx context.Context, obj *model.RemoveTagsFromFilePayload) ([]*model.Tag, error)
 }
 
 type executableSchema struct {
@@ -319,6 +331,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RefreshAccessToken(childComplexity, args["refreshToken"].(string)), true
 
+	case "Mutation.removeTagsFromFile":
+		if e.complexity.Mutation.RemoveTagsFromFile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_removeTagsFromFile_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RemoveTagsFromFile(childComplexity, args["id"].(string), args["tagIDs"].([]string)), true
+
 	case "Mutation.revokeRefreshToken":
 		if e.complexity.Mutation.RevokeRefreshToken == nil {
 			break
@@ -392,6 +416,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RefreshAccessTokenPayload.ExpiresAt(childComplexity), true
+
+	case "RemoveTagsFromFilePayload.file":
+		if e.complexity.RemoveTagsFromFilePayload.File == nil {
+			break
+		}
+
+		return e.complexity.RemoveTagsFromFilePayload.File(childComplexity), true
+
+	case "RemoveTagsFromFilePayload.tags":
+		if e.complexity.RemoveTagsFromFilePayload.Tags == nil {
+			break
+		}
+
+		return e.complexity.RemoveTagsFromFilePayload.Tags(childComplexity), true
 
 	case "RevokeRefreshTokenPayload.deletedAt":
 		if e.complexity.RevokeRefreshTokenPayload.DeletedAt == nil {
@@ -631,12 +669,26 @@ type DeleteFilePayload {
   "Time of deletion"
   deletedAt: Time!
 }
+
+type RemoveTagsFromFilePayload {
+  "Updated file"
+  file: File!
+
+  "Removed tags"
+  tags: [Tag!]!
+}
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
   # Auth
 
   "Sign in with email and password"
-  login(email: String!, password: String!): LoginPayload
+  login(
+    "User email"
+    email: String!
+
+    "User password"
+    password: String!
+  ): LoginPayload
 
   "Refresh access token with refresh token"
   refreshAccessToken(refreshToken: String!): RefreshAccessTokenPayload
@@ -650,9 +702,11 @@ type DeleteFilePayload {
   createUser(input: UserInput!): User
 
   "Update user with ID and UserUpdateInput"
-  updateUser(id: ID @isKind(kind: ADMIN), input: UserUpdateInput!): User
-    @isKind(kind: USER)
-    @auth
+  updateUser(
+    "User ID"
+    id: ID @isKind(kind: ADMIN)
+    input: UserUpdateInput!
+  ): User @isKind(kind: USER) @auth
 
   # File
 
@@ -660,10 +714,21 @@ type DeleteFilePayload {
   createFile(input: FileInput!): File @isKind(kind: USER) @auth
 
   "Update file with ID and FileUpdateInput"
-  updateFile(id: ID!, input: FileUpdateInput!): File @isKind(kind: USER) @auth
+  updateFile("File ID" id: ID!, input: FileUpdateInput!): File
+    @isKind(kind: USER)
+    @auth
 
   # "Delete file with ID"
-  deleteFile(id: ID!): DeleteFilePayload @isKind(kind: USER) @auth
+  deleteFile("File ID" id: ID!): DeleteFilePayload @isKind(kind: USER) @auth
+
+  "Remove tags from the file with file ID and tags IDs"
+  removeTagsFromFile(
+    "File ID"
+    id: ID!
+
+    "Tag IDs"
+    tagIDs: [ID!]!
+  ): RemoveTagsFromFilePayload @isKind(kind: USER) @auth
 
   # Tag
 
@@ -675,12 +740,12 @@ type DeleteFilePayload {
   # User
 
   "Get user by ID"
-  user(id: ID!): User
+  user("User ID" id: ID!): User
 
   # File
 
   "Get file by ID"
-  file(id: ID!): File
+  file("File ID" id: ID!): File
 }
 `, BuiltIn: false},
 	{Name: "../schema/schema.graphql", Input: `schema {
@@ -897,6 +962,30 @@ func (ec *executionContext) field_Mutation_refreshAccessToken_args(ctx context.C
 		}
 	}
 	args["refreshToken"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_removeTagsFromFile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 []string
+	if tmp, ok := rawArgs["tagIDs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tagIDs"))
+		arg1, err = ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tagIDs"] = arg1
 	return args, nil
 }
 
@@ -2319,6 +2408,94 @@ func (ec *executionContext) fieldContext_Mutation_deleteFile(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_removeTagsFromFile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_removeTagsFromFile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().RemoveTagsFromFile(rctx, fc.Args["id"].(string), fc.Args["tagIDs"].([]string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			kind, err := ec.unmarshalNUserKind2githubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, "USER")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.IsKind == nil {
+				return nil, errors.New("directive isKind is not implemented")
+			}
+			return ec.directives.IsKind(ctx, nil, directive0, kind)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive1)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.RemoveTagsFromFilePayload); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/clutterpot/clutterpot/model.RemoveTagsFromFilePayload`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RemoveTagsFromFilePayload)
+	fc.Result = res
+	return ec.marshalORemoveTagsFromFilePayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐRemoveTagsFromFilePayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_removeTagsFromFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "file":
+				return ec.fieldContext_RemoveTagsFromFilePayload_file(ctx, field)
+			case "tags":
+				return ec.fieldContext_RemoveTagsFromFilePayload_tags(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RemoveTagsFromFilePayload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_removeTagsFromFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createTag(ctx, field)
 	if err != nil {
@@ -2761,6 +2938,120 @@ func (ec *executionContext) fieldContext_RefreshAccessTokenPayload_expiresAt(ctx
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoveTagsFromFilePayload_file(ctx context.Context, field graphql.CollectedField, obj *model.RemoveTagsFromFilePayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveTagsFromFilePayload_file(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RemoveTagsFromFilePayload().File(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.File)
+	fc.Result = res
+	return ec.marshalNFile2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFile(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveTagsFromFilePayload_file(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveTagsFromFilePayload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_File_id(ctx, field)
+			case "filename":
+				return ec.fieldContext_File_filename(ctx, field)
+			case "mimeType":
+				return ec.fieldContext_File_mimeType(ctx, field)
+			case "extension":
+				return ec.fieldContext_File_extension(ctx, field)
+			case "size":
+				return ec.fieldContext_File_size(ctx, field)
+			case "tags":
+				return ec.fieldContext_File_tags(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_File_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_File_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_File_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type File", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoveTagsFromFilePayload_tags(ctx context.Context, field graphql.CollectedField, obj *model.RemoveTagsFromFilePayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveTagsFromFilePayload_tags(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RemoveTagsFromFilePayload().Tags(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Tag)
+	fc.Result = res
+	return ec.marshalNTag2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveTagsFromFilePayload_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveTagsFromFilePayload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tag_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tag_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
 	}
 	return fc, nil
@@ -5528,6 +5819,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_deleteFile(ctx, field)
 			})
 
+		case "removeTagsFromFile":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_removeTagsFromFile(ctx, field)
+			})
+
 		case "createTag":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -5651,6 +5948,67 @@ func (ec *executionContext) _RefreshAccessTokenPayload(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var removeTagsFromFilePayloadImplementors = []string{"RemoveTagsFromFilePayload"}
+
+func (ec *executionContext) _RemoveTagsFromFilePayload(ctx context.Context, sel ast.SelectionSet, obj *model.RemoveTagsFromFilePayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, removeTagsFromFilePayloadImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RemoveTagsFromFilePayload")
+		case "file":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RemoveTagsFromFilePayload_file(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "tags":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RemoveTagsFromFilePayload_tags(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6136,6 +6494,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNFile2githubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFile(ctx context.Context, sel ast.SelectionSet, v model.File) graphql.Marshaler {
+	return ec._File(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFile2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFile(ctx context.Context, sel ast.SelectionSet, v *model.File) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._File(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFileInput2githubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileInput(ctx context.Context, v interface{}) (model.FileInput, error) {
 	res, err := ec.unmarshalInputFileInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6159,6 +6531,38 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNID2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v interface{}) (int64, error) {
@@ -6189,6 +6593,50 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Tag) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTag(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTag(ctx context.Context, sel ast.SelectionSet, v *model.Tag) graphql.Marshaler {
@@ -6612,6 +7060,13 @@ func (ec *executionContext) marshalORefreshAccessTokenPayload2ᚖgithubᚗcomᚋ
 		return graphql.Null
 	}
 	return ec._RefreshAccessTokenPayload(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORemoveTagsFromFilePayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐRemoveTagsFromFilePayload(ctx context.Context, sel ast.SelectionSet, v *model.RemoveTagsFromFilePayload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RemoveTagsFromFilePayload(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORevokeRefreshTokenPayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐRevokeRefreshTokenPayload(ctx context.Context, sel ast.SelectionSet, v *model.RevokeRefreshTokenPayload) graphql.Marshaler {

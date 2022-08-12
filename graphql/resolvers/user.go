@@ -6,9 +6,13 @@ import (
 	"github.com/clutterpot/clutterpot/model"
 )
 
+// Query resolvers
+
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	return r.Store.User.GetByID(id)
 }
+
+// Mutation resolvers
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserInput) (*model.User, error) {
 	if err := r.Validator.Validate(ctx, input); err != nil {

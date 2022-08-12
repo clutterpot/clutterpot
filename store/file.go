@@ -139,6 +139,17 @@ func (fs *fileStore) Delete(id string) error {
 	return nil
 }
 
+func (fs *fileStore) RemoveTags(id string, tagIDs []string) (*model.RemoveTagsFromFilePayload, error) {
+	if _, err := sq.Delete("file_tags").Where(sq.Eq{
+		"file_id": id,
+		"tag_id":  tagIDs,
+	}).PlaceholderFormat(sq.Dollar).RunWith(fs.db).Query(); err != nil {
+		return nil, fmt.Errorf("an error occurred while removing file tags")
+	}
+
+	return &model.RemoveTagsFromFilePayload{FileID: id, TagIDs: tagIDs}, nil
+}
+
 func (fs *fileStore) GetByID(id string) (*model.File, error) {
 	var f model.File
 

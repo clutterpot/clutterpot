@@ -7,6 +7,8 @@ import (
 	"github.com/clutterpot/clutterpot/model"
 )
 
+// Mutation resolvers
+
 func (r *mutationResolver) Login(ctx context.Context, email, password string) (*model.LoginPayload, error) {
 	user, err := r.Store.User.GetByEmail(email)
 	if err != nil {

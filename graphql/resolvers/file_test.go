@@ -34,6 +34,7 @@ func TestFileResolvers(t *testing.T) {
 	t.Run("CreateFile", func(t *testing.T) { testFileResolvers_CreateFile(t, gqlClient, store, auth) })
 	t.Run("UpdateFile", func(t *testing.T) { testFileResolvers_UpdateFile(t, gqlClient, store, auth) })
 	t.Run("DeleteFile", func(t *testing.T) { testFileResolvers_DeleteFile(t, gqlClient, store, auth) })
+	t.Run("RemoveTagsFromFile", func(t *testing.T) { testFileResolvers_RemoveTagsFromFile(t, gqlClient, store, auth) })
 }
 
 func testFileResolvers_File(t *testing.T, c *client.Client, s *store.Store) {
@@ -168,4 +169,46 @@ func testFileResolvers_DeleteFile(t *testing.T, c *client.Client, s *store.Store
 	err = c.Post(query, &resp, client.Var("id", file.ID),
 		client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
 	require.NoError(t, err, "cannot delete file")
+}
+
+func testFileResolvers_RemoveTagsFromFile(t *testing.T, c *client.Client, s *store.Store, a *auth.Auth) {
+	user, err := s.User.Create(model.UserInput{
+		Username: "test_" + model.NewID(),
+		Email:    "test_" + model.NewID() + "@example.com",
+		Password: "Password1!",
+	})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.User.Delete(user.ID)) }()
+
+	_, token, err := a.NewAccessToken(&auth.Claims{UserID: user.ID, Username: user.Username, Kind: user.Kind})
+	require.NoError(t, err)
+
+	tag, err := s.Tag.Create(model.TagInput{Name: "test_" + model.NewID()})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.Tag.Delete(tag.ID)) }()
+
+	file, err := s.File.Create(model.FileInput{Filename: "test_" + model.NewID(), Tags: &[]string{tag.ID}})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.File.Delete(file.ID)) }()
+
+	query := `
+		mutation removeTagsFromFile($id: ID!, $tagIDs: [ID!]!) {
+			removeTagsFromFile(id: $id, tagIDs: $tagIDs) {
+				file {
+					id
+				}
+			}
+		}
+		`
+
+	var resp struct {
+		RemoveTagsFromFile struct {
+			File struct {
+				ID string
+			}
+		}
+	}
+	err = c.Post(query, &resp, client.Var("id", file.ID), client.Var("tagIDs", []string{tag.ID}),
+		client.AddHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
+	require.NoError(t, err, "cannot remove tags from file")
 }
