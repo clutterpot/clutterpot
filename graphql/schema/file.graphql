@@ -38,6 +38,9 @@ input FileInput {
 input FileUpdateInput {
   "Filename"
   filename: String
+
+  "IDs of tags which the file will be tagged"
+  tags: [ID!]
 }
 
 type DeleteFilePayload {

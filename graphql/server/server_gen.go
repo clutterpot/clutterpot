@@ -619,6 +619,9 @@ input FileInput {
 input FileUpdateInput {
   "Filename"
   filename: String
+
+  "IDs of tags which the file will be tagged"
+  tags: [ID!]
 }
 
 type DeleteFilePayload {
@@ -5084,7 +5087,7 @@ func (ec *executionContext) unmarshalInputFileInput(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			it.Tags, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			it.Tags, err = ec.unmarshalOID2ᚖᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5101,7 +5104,7 @@ func (ec *executionContext) unmarshalInputFileUpdateInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"filename"}
+	fieldsInOrder := [...]string{"filename", "tags"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5113,6 +5116,14 @@ func (ec *executionContext) unmarshalInputFileUpdateInput(ctx context.Context, o
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filename"))
 			it.Filename, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tags":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			it.Tags, err = ec.unmarshalOID2ᚖᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6575,6 +6586,18 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	}
 	res := graphql.MarshalID(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOID2ᚖᚕstringᚄ(ctx context.Context, v interface{}) (*[]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v *[]string) graphql.Marshaler {
+	return ec.marshalOID2ᚕstringᚄ(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOLoginPayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐLoginPayload(ctx context.Context, sel ast.SelectionSet, v *model.LoginPayload) graphql.Marshaler {

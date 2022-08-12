@@ -22,15 +22,12 @@ func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 	var f model.File
 
 	/*
-		Query form is:
-
 		WITH f AS (
-			INSERT INTO files(<columns>) VALUES ( <values> ) RETURNING <columns>
+			INSERT INTO files(id, filename, mime_type, extension, size) VALUES ( <values> )
+			RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at
 		)[, ft AS (
-			INSERT INTO file_tags(<columns>) VALUES ( ( SELECT id FROM f), unnest(array [<values>]) )
-		) ] SELECT <columns> FROM f
-
-		All insert queries are appended as prefixes due to the query builder limitations
+			INSERT INTO file_tags(file_id, tag_id) VALUES ( (SELECT id FROM f), unnest(array [ <values> ]) )
+		)] SELECT id, filename, mime_type, extension, size, created_at, updated_at, deleted_at FROM f
 	*/
 	query := sq.Select("id", "filename", "mime_type", "extension", "size", "created_at", "updated_at", "deleted_at").
 		From("f").Prefix("WITH f AS (?)", sq.Insert("files").SetMap(sq.Eq{
@@ -41,17 +38,17 @@ func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 		"size":      0,
 	}).Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at"))
 
-	if len(input.Tags) > 0 {
+	if input.Tags != nil && len(*input.Tags) > 0 {
 		// Convert []string to []any
-		tagsIDs := make([]any, len(input.Tags))
-		for i, tagID := range input.Tags {
+		tagsIDs := make([]any, len(*input.Tags))
+		for i, tagID := range *input.Tags {
 			tagsIDs[i] = tagID
 		}
 
 		// Append file tags insert query
 		query = query.Prefix(", ft AS (?)", sq.Insert("file_tags").SetMap(sq.Eq{
 			"file_id": sq.Expr("(?)", sq.Select("id").From("f")),
-			"tag_id":  sq.Expr(fmt.Sprintf("unnest(array[%s])", sq.Placeholders(len(input.Tags))), tagsIDs...),
+			"tag_id":  sq.Expr(fmt.Sprintf("unnest(array[%s])", sq.Placeholders(len(*input.Tags))), tagsIDs...),
 		}))
 	}
 
@@ -66,18 +63,44 @@ func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 func (fs *fileStore) Update(id string, input model.FileUpdateInput) (*model.File, error) {
 	var f model.File
 
-	query := sq.Update("files").Set("updated_at", "now()")
+	/*
+		WITH f AS (
+			UPDATE files SET ( <values> ) WHERE id = $1 AND deleted_at IS NULL
+			RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at
+		)[, ft AS (
+			INSERT INTO file_tags(file_id, tag_id) VALUES ( (SELECT id FROM f), unnest(array [ <values> ]) )
+		)] SELECT id, filename, mime_type, extension, size, created_at, updated_at, deleted_at FROM f
+	*/
+	query := sq.Select("id", "filename", "mime_type", "extension", "size", "created_at", "updated_at", "deleted_at").
+		From("f")
+	fileUpdateQuery := sq.Update("files").Set("updated_at", "now()")
 
 	if input == (model.FileUpdateInput{}) {
 		return nil, fmt.Errorf("file update input cannot be empty")
 	}
 	if input.Filename != nil {
-		query = query.Set("filename", *input.Filename)
+		fileUpdateQuery = fileUpdateQuery.Set("filename", *input.Filename)
 	}
 
-	if err := query.Where(sq.And{sq.Eq{"id": id}, sq.Eq{"deleted_at": nil}}).
-		Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at").
-		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
+	// Append file update query
+	query = query.Prefix("WITH f AS (?)", fileUpdateQuery.Where(sq.And{sq.Eq{"id": id}, sq.Eq{"deleted_at": nil}}).
+		Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at"))
+
+	if input.Tags != nil && len(*input.Tags) > 0 {
+		// Convert []string to []any
+		tagsIDs := make([]any, len(*input.Tags))
+		for i, tagID := range *input.Tags {
+			tagsIDs[i] = tagID
+		}
+
+		// Append file tags insert query
+		query = query.Prefix(", ft AS (?)", sq.Insert("file_tags").SetMap(sq.Eq{
+			"file_id": sq.Expr("(?)", sq.Select("id").From("f")),
+			"tag_id":  sq.Expr(fmt.Sprintf("unnest(array[%s])", sq.Placeholders(len(*input.Tags))), tagsIDs...),
+		}))
+	}
+
+	if err := query.PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
 		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("file not found")

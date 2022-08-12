@@ -45,10 +45,10 @@ func (ts *tagStore) Delete(id string) error {
 func (ts *tagStore) GetByFileID(fileID string) ([]*model.Tag, error) {
 	var t []*model.Tag
 
-	tagsIDs := sq.StatementBuilder.Select("tag_id").From("file_tags").
-		Where("file_id = ?", fileID).PlaceholderFormat(sq.Dollar)
-
-	rows, err := sq.Select("name").From("tags").Where(tagsIDs.Prefix("id IN (").Suffix(")")).
+	// SELECT id, name FROM tags WHERE id IN ( SELECT tag_id FROM file_tags WHERE file_id = $1)
+	rows, err := sq.Select("id", "name").From("tags").
+		Where(sq.Expr("id IN (?)", sq.Select("tag_id").From("file_tags").
+			Where("file_id = ?", fileID))).
 		PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (ts *tagStore) GetByFileID(fileID string) ([]*model.Tag, error) {
 
 	for rows.Next() {
 		var temp model.Tag
-		if err := rows.Scan(&temp.Name); err != nil {
+		if err := rows.Scan(&temp.ID, &temp.Name); err != nil {
 			return nil, err
 		}
 		t = append(t, &temp)
