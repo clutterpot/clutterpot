@@ -18,6 +18,7 @@ require (
 	github.com/rs/xid v1.4.0
 	github.com/stretchr/testify v1.8.0
 	github.com/vektah/gqlparser/v2 v2.4.6
+	github.com/vikstrous/dataloadgen v0.0.3
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 )
 

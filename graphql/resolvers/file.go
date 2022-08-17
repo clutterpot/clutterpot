@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/clutterpot/clutterpot/model"
+
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -48,7 +49,7 @@ func (r *mutationResolver) RemoveTagsFromFile(ctx context.Context, id string, ta
 // File resolvers
 
 func (r *fileResolver) Tags(ctx context.Context, obj *model.File) ([]*model.Tag, error) {
-	return r.Store.Tag.GetByFileID(obj.ID)
+	return r.Dataloader.File.Tags.Load(obj.ID)
 }
 
 // RemoveTagsFromFilePayload resolvers

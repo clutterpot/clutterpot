@@ -42,30 +42,30 @@ func (ts *tagStore) Delete(id string) error {
 	return nil
 }
 
-func (ts *tagStore) GetByFileID(fileID string) ([]*model.Tag, error) {
-	var t []*model.Tag
-
-	// SELECT id, name FROM tags WHERE id IN ( SELECT tag_id FROM file_tags WHERE file_id = $1)
-	rows, err := sq.Select("id", "name").From("tags").
-		Where(sq.Expr("id IN (?)", sq.Select("tag_id").From("file_tags").
-			Where("file_id = ?", fileID))).
+func (ts *tagStore) GetByFileIDs(fileIDs []string) (tags [][]*model.Tag, errs []error) {
+	rows, err := sq.Select("file_id", "id", "name").From("file_tags ft").
+		LeftJoin("tags t ON ft.tag_id = t.id").Where(sq.Eq{"file_id": fileIDs}).
 		PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	defer rows.Close()
 
+	t := make(map[string][]*model.Tag)
 	for rows.Next() {
-		var temp model.Tag
-		if err := rows.Scan(&temp.ID, &temp.Name); err != nil {
-			return nil, err
+		var fileID string
+		var tag model.Tag
+		if err := rows.Scan(&fileID, &tag.ID, &tag.Name); err != nil {
+			errs = append(errs, err)
 		}
-		t = append(t, &temp)
+		t[fileID] = append(t[fileID], &tag)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
+	tags = make([][]*model.Tag, len(fileIDs))
+
+	for i, id := range fileIDs {
+		tags[i] = t[id]
 	}
 
-	return t, nil
+	return tags, nil
 }
