@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
+	"github.com/clutterpot/clutterpot/store/pagination"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -119,4 +120,59 @@ func (us *userStore) GetByEmail(email string) (*model.AuthUser, error) {
 	}
 
 	return &u, nil
+}
+
+func (us *userStore) GetAll(after, before *string, first, last *int, sort *model.UserSort, order *model.Order) ([]*model.User, model.PageInfo, error) {
+	var urs []*model.User
+	var p model.PageInfo
+
+	// Base query
+	query := sq.Select("id", "username", "email", "kind", "display_name", "bio", "created_at", "updated_at").
+		From("users")
+
+	// Build paginated query
+	paginatedQuery, err := pagination.PaginateQuery(query, after, before, first, last, string(*sort), *order)
+	if err != nil {
+		return nil, p, err
+	}
+
+	// Query all users (with pagination settings)
+	rows, err := paginatedQuery.PlaceholderFormat(sq.Dollar).RunWith(us.db).Query()
+	if err != nil {
+		// return nil, fmt.Errorf("an error occurred while getting all users")
+		return nil, p, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, p, fmt.Errorf("an error occurred while getting all users")
+		}
+		urs = append(urs, &u)
+	}
+
+	if len(urs) == 0 {
+		return nil, p, nil
+	}
+
+	// Query HasNextPage and HasPrevious page fields od page info
+	rows, err = pagination.GetPageInfoQuery(query, urs[0].ID, urs[len(urs)-1].ID, *order).
+		PlaceholderFormat(sq.Dollar).RunWith(us.db).Query()
+	if err != nil {
+		return nil, p, err /*fmt.Errorf("an error occurred while getting all users")*/
+	}
+
+	rows.Next()
+	rows.Scan(&p.HasPreviousPage)
+	rows.Next()
+	rows.Scan(&p.HasNextPage)
+
+	// Set start and end cursors in page info
+	startCursor := pagination.EncodeCursor(urs[0].ID)
+	endCursor := pagination.EncodeCursor(urs[len(urs)-1].ID)
+	p.StartCursor = &startCursor
+	p.EndCursor = &endCursor
+
+	return urs, p, nil
 }

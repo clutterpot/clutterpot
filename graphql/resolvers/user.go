@@ -4,12 +4,35 @@ import (
 	"context"
 
 	"github.com/clutterpot/clutterpot/model"
+	"github.com/clutterpot/clutterpot/store/pagination"
 )
 
 // Query resolvers
 
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	return r.Store.User.GetByID(id)
+}
+
+func (r *queryResolver) Users(ctx context.Context, after, before *string, first, last *int, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {
+	var uc model.UserConnection
+
+	users, pageInfo, err := r.Store.User.GetAll(after, before, first, last, sort, order)
+	if err != nil {
+		return nil, err
+	}
+
+	uc.Nodes = users
+	uc.PageInfo = &pageInfo
+
+	uc.Edges = make([]*model.UserEdge, len(users))
+	for i, u := range users {
+		uc.Edges[i] = &model.UserEdge{
+			Cursor: pagination.EncodeCursor(u.ID),
+			Node:   u,
+		}
+	}
+
+	return &uc, nil
 }
 
 // Mutation resolvers

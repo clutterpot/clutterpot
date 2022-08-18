@@ -3,5 +3,17 @@ schema {
   mutation: Mutation
 }
 
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+enum Order {
+  ASC
+  DESC
+}
+
 scalar Time
 scalar Int64

@@ -15,6 +15,13 @@ const (
 	UserKindAdmin
 )
 
+type UserSort string
+
+const (
+	UserSortCreated UserSort = "created_at"
+	UserSortUpdated UserSort = "updated_at"
+)
+
 type UserInput struct {
 	Username string `json:"username" validate:"required,username,min=4,max=32"`
 	Email    string `json:"email" validate:"required,email,max=254"`

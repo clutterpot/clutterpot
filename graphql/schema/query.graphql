@@ -4,6 +4,16 @@ type Query {
   "Get user by ID"
   user("User ID" id: ID!): User
 
+  "Get all users"
+  users(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    sort: UserSort = CREATED
+    order: Order = DESC
+  ): UserConnection
+
   # File
 
   "Get file by ID"

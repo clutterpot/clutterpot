@@ -3,6 +3,9 @@
 package model
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 )
 
@@ -43,6 +46,13 @@ type LoginPayload struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
+type PageInfo struct {
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor"`
+	EndCursor       *string `json:"endCursor"`
+}
+
 type RefreshAccessTokenPayload struct {
 	// Access token
 	AccessToken string `json:"accessToken"`
@@ -81,4 +91,61 @@ type User struct {
 	CreatedAt time.Time `json:"createdAt"`
 	// Time of last update
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type UserConnection struct {
+	// User edges
+	Edges []*UserEdge `json:"edges"`
+	// User nodes
+	Nodes []*User `json:"nodes"`
+	// Page info
+	PageInfo *PageInfo `json:"pageInfo"`
+}
+
+type UserEdge struct {
+	// Pagination cursor
+	Cursor string `json:"cursor"`
+	// User node
+	Node *User `json:"node"`
+}
+
+type Order string
+
+const (
+	OrderAsc  Order = "ASC"
+	OrderDesc Order = "DESC"
+)
+
+var AllOrder = []Order{
+	OrderAsc,
+	OrderDesc,
+}
+
+func (e Order) IsValid() bool {
+	switch e {
+	case OrderAsc, OrderDesc:
+		return true
+	}
+	return false
+}
+
+func (e Order) String() string {
+	return string(e)
+}
+
+func (e *Order) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Order(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Order", str)
+	}
+	return nil
+}
+
+func (e Order) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

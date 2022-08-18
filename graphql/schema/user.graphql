@@ -24,6 +24,25 @@ type User {
   updatedAt: Time!
 }
 
+type UserConnection {
+  "User edges"
+  edges: [UserEdge]
+
+  "User nodes"
+  nodes: [User]
+
+  "Page info"
+  pageInfo: PageInfo!
+}
+
+type UserEdge {
+  "Pagination cursor"
+  cursor: String!
+
+  "User node"
+  node: User
+}
+
 input UserInput {
   "Username"
   username: String!
@@ -56,14 +75,19 @@ input UserUpdateInput {
 }
 
 enum UserKind {
-  "User is banned"
+  "Banned user"
   BANNED
 
-  "User is a standard user"
+  "Standard user"
   USER
 
-  "User has admin permissions"
+  "User with admin permissions"
   ADMIN
+}
+
+enum UserSort {
+  CREATED
+  UPDATED
 }
 
 directive @isKind(
