@@ -20,6 +20,12 @@ type User struct {
 	UpdatedAt   time.Time `json:"updatedAt" db:"updated_at"`
 }
 
+func (User) IsNode()         {}
+func (u User) GetID() string { return u.ID }
+
+type UserConnection = Connection[User]
+type UserEdge = Edge[User]
+
 type UserKind int8
 
 const (

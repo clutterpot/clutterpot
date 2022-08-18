@@ -14,6 +14,9 @@ type File struct {
 	DeletedAt *time.Time `json:"deletedAt" db:"deleted_at"`
 }
 
+func (File) IsNode()         {}
+func (f File) GetID() string { return f.ID }
+
 type FileInput struct {
 	Filename string    `json:"filename" validate:"required,filename,printunicode,min=1,max=255"`
 	Tags     *[]string `json:"tags" validate:"omitempty"`

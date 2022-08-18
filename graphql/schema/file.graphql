@@ -1,4 +1,4 @@
-type File {
+type File implements Node {
   "Unique file ID"
   id: ID!
 

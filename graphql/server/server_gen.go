@@ -158,7 +158,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
-	Users(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.UserSort, order *model.Order) (*model.UserConnection, error)
+	Users(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.UserSort, order *model.Order) (*model.Connection[model.User], error)
 	File(ctx context.Context, id string) (*model.File, error)
 }
 type RemoveTagsFromFilePayloadResolver interface {
@@ -712,7 +712,7 @@ type RevokeRefreshTokenPayload {
 
 directive @auth on FIELD_DEFINITION
 `, BuiltIn: false},
-	{Name: "../schema/file.graphql", Input: `type File {
+	{Name: "../schema/file.graphql", Input: `type File implements Node {
   "Unique file ID"
   id: ID!
 
@@ -858,6 +858,10 @@ type RemoveTagsFromFilePayload {
   mutation: Mutation
 }
 
+interface Node {
+  id: ID!
+}
+
 type PageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -873,7 +877,7 @@ enum Order {
 scalar Time
 scalar Int64
 `, BuiltIn: false},
-	{Name: "../schema/tag.graphql", Input: `type Tag {
+	{Name: "../schema/tag.graphql", Input: `type Tag implements Node {
   "Unique tag ID"
   id: ID!
 
@@ -889,7 +893,7 @@ input TagInput {
   private: Boolean! = false
 }
 `, BuiltIn: false},
-	{Name: "../schema/user.graphql", Input: `type User {
+	{Name: "../schema/user.graphql", Input: `type User implements Node {
   "Unique user ID"
   id: ID!
 
@@ -3048,9 +3052,9 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserConnection)
+	res := resTmp.(*model.Connection[model.User])
 	fc.Result = res
-	return ec.marshalOUserConnection2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserConnection(ctx, field.Selections, res)
+	return ec.marshalOUserConnection2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4010,7 +4014,7 @@ func (ec *executionContext) fieldContext_User_updatedAt(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _UserConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.UserConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.Connection[model.User]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4033,9 +4037,9 @@ func (ec *executionContext) _UserConnection_edges(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.UserEdge)
+	res := resTmp.([]*model.Edge[model.User])
 	fc.Result = res
-	return ec.marshalOUserEdge2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserEdge(ctx, field.Selections, res)
+	return ec.marshalOUserEdge2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UserConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4057,7 +4061,7 @@ func (ec *executionContext) fieldContext_UserConnection_edges(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _UserConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *model.UserConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *model.Connection[model.User]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserConnection_nodes(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4116,7 +4120,7 @@ func (ec *executionContext) fieldContext_UserConnection_nodes(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _UserConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.UserConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.Connection[model.User]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4170,7 +4174,7 @@ func (ec *executionContext) fieldContext_UserConnection_pageInfo(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _UserEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.UserEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.Edge[model.User]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4214,7 +4218,7 @@ func (ec *executionContext) fieldContext_UserEdge_cursor(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _UserEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.UserEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.Edge[model.User]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6274,6 +6278,36 @@ func (ec *executionContext) unmarshalInputUserUpdateInput(ctx context.Context, o
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj model.Node) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.File:
+		return ec._File(ctx, sel, &obj)
+	case *model.File:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._File(ctx, sel, obj)
+	case model.Tag:
+		return ec._Tag(ctx, sel, &obj)
+	case *model.Tag:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Tag(ctx, sel, obj)
+	case model.User:
+		return ec._User(ctx, sel, &obj)
+	case *model.User:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._User(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -6313,7 +6347,7 @@ func (ec *executionContext) _DeleteFilePayload(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var fileImplementors = []string{"File"}
+var fileImplementors = []string{"File", "Node"}
 
 func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj *model.File) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, fileImplementors)
@@ -6812,7 +6846,7 @@ func (ec *executionContext) _RevokeRefreshTokenPayload(ctx context.Context, sel 
 	return out
 }
 
-var tagImplementors = []string{"Tag"}
+var tagImplementors = []string{"Tag", "Node"}
 
 func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj *model.Tag) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, tagImplementors)
@@ -6847,7 +6881,7 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
-var userImplementors = []string{"User"}
+var userImplementors = []string{"User", "Node"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
@@ -6920,7 +6954,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 var userConnectionImplementors = []string{"UserConnection"}
 
-func (ec *executionContext) _UserConnection(ctx context.Context, sel ast.SelectionSet, obj *model.UserConnection) graphql.Marshaler {
+func (ec *executionContext) _UserConnection(ctx context.Context, sel ast.SelectionSet, obj *model.Connection[model.User]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userConnectionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -6956,7 +6990,7 @@ func (ec *executionContext) _UserConnection(ctx context.Context, sel ast.Selecti
 
 var userEdgeImplementors = []string{"UserEdge"}
 
-func (ec *executionContext) _UserEdge(ctx context.Context, sel ast.SelectionSet, obj *model.UserEdge) graphql.Marshaler {
+func (ec *executionContext) _UserEdge(ctx context.Context, sel ast.SelectionSet, obj *model.Edge[model.User]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userEdgeImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -8077,14 +8111,14 @@ func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋclutterpotᚋclutterp
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOUserConnection2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v *model.UserConnection) graphql.Marshaler {
+func (ec *executionContext) marshalOUserConnection2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v *model.Connection[model.User]) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._UserConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOUserEdge2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserEdge(ctx context.Context, sel ast.SelectionSet, v []*model.UserEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEdge2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐEdge(ctx context.Context, sel ast.SelectionSet, v []*model.Edge[model.User]) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8111,7 +8145,7 @@ func (ec *executionContext) marshalOUserEdge2ᚕᚖgithubᚗcomᚋclutterpotᚋc
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOUserEdge2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOUserEdge2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8125,7 +8159,7 @@ func (ec *executionContext) marshalOUserEdge2ᚕᚖgithubᚗcomᚋclutterpotᚋc
 	return ret
 }
 
-func (ec *executionContext) marshalOUserEdge2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserEdge(ctx context.Context, sel ast.SelectionSet, v *model.UserEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEdge2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐEdge(ctx context.Context, sel ast.SelectionSet, v *model.Edge[model.User]) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

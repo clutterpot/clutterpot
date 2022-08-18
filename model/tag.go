@@ -6,6 +6,9 @@ type Tag struct {
 	Name    string `json:"name" db:"name"`
 }
 
+func (Tag) IsNode()         {}
+func (t Tag) GetID() string { return t.ID }
+
 type TagInput struct {
 	OwnerID *string `json:"-"`
 	Name    string  `json:"name"`

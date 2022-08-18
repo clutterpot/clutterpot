@@ -1,4 +1,4 @@
-type Tag {
+type Tag implements Node {
   "Unique tag ID"
   id: ID!
 

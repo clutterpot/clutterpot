@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
-	"github.com/clutterpot/clutterpot/store/pagination"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -132,46 +131,6 @@ func (us *userStore) GetByEmail(email string) (*model.AuthUser, error) {
 	return &u, nil
 }
 
-func (us *userStore) GetAll(after, before *string, first, last *int, sort *model.UserSort, order *model.Order) ([]*model.User, *model.PageInfo, error) {
-	// Base query
-	query := sq.Select("id", "username", "email", "kind", "display_name", "bio", "created_at", "updated_at").
-		From("users")
-
-	// Build paginated query
-	paginatedQuery, args, err := pagination.PaginateQuery(query, after, before, first, last, string(*sort), *order)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var urs []*model.User
-	if err = us.db.Select(&urs, paginatedQuery, args...); err != nil || len(urs) == 0 {
-		if err == sql.ErrNoRows || len(urs) == 0 {
-			return nil, nil, fmt.Errorf("users not found")
-		}
-
-		return nil, nil, fmt.Errorf("an error occurred while getting all users")
-	}
-
-	// Build page info query
-	pageInfoQuery, args, err := pagination.GetPageInfoQuery(query, urs[0].ID, urs[len(urs)-1].ID, *order)
-	if err != nil {
-		return nil, nil, fmt.Errorf("an error occurred while getting all users")
-	}
-
-	// Query HasNextPage and HasPrevious page fields od page info
-	var hasPages []bool
-	if err = us.db.Select(&hasPages, pageInfoQuery, args...); err != nil {
-		return nil, nil, fmt.Errorf("an error occurred while getting all users")
-	}
-
-	startCursor := pagination.EncodeCursor(urs[0].ID)
-	endCursor := pagination.EncodeCursor(urs[len(urs)-1].ID)
-	p := model.PageInfo{
-		HasPreviousPage: hasPages[0],
-		HasNextPage:     hasPages[1],
-		StartCursor:     &startCursor,
-		EndCursor:       &endCursor,
-	}
-
-	return urs, &p, nil
+func (us *userStore) GetAll(after, before *string, first, last *int, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {
+	return getAll[model.User](us.db, "users", after, before, first, last, string(*sort), *order)
 }

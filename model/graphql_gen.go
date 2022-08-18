@@ -46,22 +46,6 @@ type RevokeRefreshTokenPayload struct {
 	DeletedAt time.Time `json:"deletedAt"`
 }
 
-type UserConnection struct {
-	// User edges
-	Edges []*UserEdge `json:"edges"`
-	// User nodes
-	Nodes []*User `json:"nodes"`
-	// Page info
-	PageInfo *PageInfo `json:"pageInfo"`
-}
-
-type UserEdge struct {
-	// Pagination cursor
-	Cursor string `json:"cursor"`
-	// User node
-	Node *User `json:"node"`
-}
-
 type Order string
 
 const (
