@@ -20,26 +20,27 @@ func newUserStore(db *sqlx.DB) *userStore {
 }
 
 func (us *userStore) Create(input model.UserInput) (*model.User, error) {
-	var u model.User
-
-	if err := sq.Insert("users").SetMap(sq.Eq{
+	query, args, err := sq.Insert("users").SetMap(sq.Eq{
 		"id":       model.NewID(),
 		"username": input.Username,
 		"password": model.HashPassword(input.Password),
 		"email":    input.Email,
 		"kind":     model.UserKindUser,
 	}).Suffix("RETURNING id, username, email, kind, display_name, bio, created_at, updated_at").
-		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
-		Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
 		return nil, fmt.Errorf("an error occurred while creating a user")
+	}
+
+	var u model.User
+	if err = us.db.Get(&u, query, args...); err != nil {
+		return nil, fmt.Errorf("an error occurred while updating a user")
 	}
 
 	return &u, nil
 }
 
 func (us *userStore) Update(id string, input model.UserUpdateInput) (*model.User, error) {
-	var u model.User
-
 	query := sq.Update("users").Set("updated_at", "now()")
 
 	if input == (model.UserUpdateInput{}) {
@@ -64,10 +65,15 @@ func (us *userStore) Update(id string, input model.UserUpdateInput) (*model.User
 		query = query.Set("bio", *input.Bio)
 	}
 
-	if err := query.Where("id = ?", id).
+	updateQuery, args, err := query.Where("id = ?", id).
 		Suffix("RETURNING id, username, email, kind, display_name, bio, created_at, updated_at").
-		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
-		Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while updating a user")
+	}
+
+	var u model.User
+	if err = us.db.Get(&u, updateQuery, args...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("user not found")
 		}
@@ -88,12 +94,14 @@ func (us *userStore) Delete(id string) error {
 }
 
 func (us *userStore) GetByID(id string) (*model.User, error) {
-	var u model.User
+	query, args, err := sq.Select("id", "username", "email", "kind", "display_name", "bio", "created_at", "updated_at").
+		From("users").Where("id = ?", id).PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while getting a user by id")
+	}
 
-	if err := sq.Select("id", "username", "email", "kind", "display_name", "bio", "created_at", "updated_at").
-		From("users").Where("id = ?", id).
-		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
-		Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
+	var u model.User
+	if err = us.db.Get(&u, query, args...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("user not found")
 		}
@@ -106,12 +114,14 @@ func (us *userStore) GetByID(id string) (*model.User, error) {
 
 // Only for auth purposes
 func (us *userStore) GetByEmail(email string) (*model.AuthUser, error) {
-	var u model.AuthUser
+	query, args, err := sq.Select("*").From("users").
+		Where("email = ?", email).PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while getting a user by email")
+	}
 
-	if err := sq.Select("id", "username", "email", "password", "kind", "display_name", "bio", "created_at", "updated_at").
-		From("users").Where("email = ?", email).
-		PlaceholderFormat(sq.Dollar).RunWith(us.db).QueryRow().
-		Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
+	var u model.AuthUser
+	if err = us.db.Get(&u, query, args...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("invalid email or password")
 		}
@@ -122,57 +132,46 @@ func (us *userStore) GetByEmail(email string) (*model.AuthUser, error) {
 	return &u, nil
 }
 
-func (us *userStore) GetAll(after, before *string, first, last *int, sort *model.UserSort, order *model.Order) ([]*model.User, model.PageInfo, error) {
-	var urs []*model.User
-	var p model.PageInfo
-
+func (us *userStore) GetAll(after, before *string, first, last *int, sort *model.UserSort, order *model.Order) ([]*model.User, *model.PageInfo, error) {
 	// Base query
 	query := sq.Select("id", "username", "email", "kind", "display_name", "bio", "created_at", "updated_at").
 		From("users")
 
 	// Build paginated query
-	paginatedQuery, err := pagination.PaginateQuery(query, after, before, first, last, string(*sort), *order)
+	paginatedQuery, args, err := pagination.PaginateQuery(query, after, before, first, last, string(*sort), *order)
 	if err != nil {
-		return nil, p, err
+		return nil, nil, err
 	}
 
-	// Query all users (with pagination settings)
-	rows, err := paginatedQuery.PlaceholderFormat(sq.Dollar).RunWith(us.db).Query()
-	if err != nil {
-		// return nil, fmt.Errorf("an error occurred while getting all users")
-		return nil, p, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var u model.User
-		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.Kind, &u.DisplayName, &u.Bio, &u.CreatedAt, &u.UpdatedAt); err != nil {
-			return nil, p, fmt.Errorf("an error occurred while getting all users")
+	var urs []*model.User
+	if err = us.db.Select(&urs, paginatedQuery, args...); err != nil || len(urs) == 0 {
+		if err == sql.ErrNoRows || len(urs) == 0 {
+			return nil, nil, fmt.Errorf("users not found")
 		}
-		urs = append(urs, &u)
+
+		return nil, nil, fmt.Errorf("an error occurred while getting all users")
 	}
 
-	if len(urs) == 0 {
-		return nil, p, nil
+	// Build page info query
+	pageInfoQuery, args, err := pagination.GetPageInfoQuery(query, urs[0].ID, urs[len(urs)-1].ID, *order)
+	if err != nil {
+		return nil, nil, fmt.Errorf("an error occurred while getting all users")
 	}
 
 	// Query HasNextPage and HasPrevious page fields od page info
-	rows, err = pagination.GetPageInfoQuery(query, urs[0].ID, urs[len(urs)-1].ID, *order).
-		PlaceholderFormat(sq.Dollar).RunWith(us.db).Query()
-	if err != nil {
-		return nil, p, err /*fmt.Errorf("an error occurred while getting all users")*/
+	var hasPages []bool
+	if err = us.db.Select(&hasPages, pageInfoQuery, args...); err != nil {
+		return nil, nil, fmt.Errorf("an error occurred while getting all users")
 	}
 
-	rows.Next()
-	rows.Scan(&p.HasPreviousPage)
-	rows.Next()
-	rows.Scan(&p.HasNextPage)
-
-	// Set start and end cursors in page info
 	startCursor := pagination.EncodeCursor(urs[0].ID)
 	endCursor := pagination.EncodeCursor(urs[len(urs)-1].ID)
-	p.StartCursor = &startCursor
-	p.EndCursor = &endCursor
+	p := model.PageInfo{
+		HasPreviousPage: hasPages[0],
+		HasNextPage:     hasPages[1],
+		StartCursor:     &startCursor,
+		EndCursor:       &endCursor,
+	}
 
-	return urs, p, nil
+	return urs, &p, nil
 }

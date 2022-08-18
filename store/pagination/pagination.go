@@ -8,25 +8,25 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
-func PaginateQuery(query sq.SelectBuilder, after, before *string, first, last *int, sort string, order model.Order) (sq.SelectBuilder, error) {
+func PaginateQuery(query sq.SelectBuilder, after, before *string, first, last *int, sort string, order model.Order) (string, []interface{}, error) {
 	query, err := setAfterAndBefore(query, after, before, order)
 	if err != nil {
-		return query, err
+		return "", nil, err
 	}
 	query, err = setLimitSortAndOrder(query, first, last, sort, string(order))
 	if err != nil {
-		return query, err
+		return "", nil, err
 	}
 
-	return query, nil
+	return query.PlaceholderFormat(sq.Dollar).ToSql()
 }
 
-func GetPageInfoQuery(query sq.SelectBuilder, startID, endID string, order model.Order) sq.SelectBuilder {
+func GetPageInfoQuery(query sq.SelectBuilder, startID, endID string, order model.Order) (string, []interface{}, error) {
 	return sq.Select("count(*) != 0").From("q").Prefix("WITH q AS (?) (", query).
 		Where(flipGt(sq.Gt{"id": startID}, order == model.OrderAsc)).Limit(1).Suffix(
 		") UNION ALL (?)", sq.Select("count(*) != 0").From("q").
 			Where(flipLt(sq.Lt{"id": endID}, order == model.OrderAsc)).Limit(1),
-	)
+	).PlaceholderFormat(sq.Dollar).ToSql()
 }
 
 func setAfterAndBefore(query sq.SelectBuilder, after, before *string, order model.Order) (sq.SelectBuilder, error) {

@@ -14,15 +14,15 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 }
 
 func (r *queryResolver) Users(ctx context.Context, after, before *string, first, last *int, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {
-	var uc model.UserConnection
-
 	users, pageInfo, err := r.Store.User.GetAll(after, before, first, last, sort, order)
 	if err != nil {
 		return nil, err
 	}
 
-	uc.Nodes = users
-	uc.PageInfo = &pageInfo
+	uc := model.UserConnection{
+		Nodes:    users,
+		PageInfo: pageInfo,
+	}
 
 	uc.Edges = make([]*model.UserEdge, len(users))
 	for i, u := range users {

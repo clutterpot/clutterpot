@@ -16,27 +16,6 @@ type DeleteFilePayload struct {
 	DeletedAt time.Time `json:"deletedAt"`
 }
 
-type File struct {
-	// Unique file ID
-	ID string `json:"id"`
-	// Filename
-	Filename string `json:"filename"`
-	// File [mime type](https://www.iana.org/assignments/media-types/media-types.xhtml)
-	MimeType string `json:"mimeType"`
-	// File extension
-	Extension string `json:"extension"`
-	// File size in bytes
-	Size int64 `json:"size"`
-	// File tags
-	Tags []*Tag `json:"tags"`
-	// Time of creation
-	CreatedAt time.Time `json:"createdAt"`
-	// Time of last update
-	UpdatedAt time.Time `json:"updatedAt"`
-	// Time of deletion
-	DeletedAt *time.Time `json:"deletedAt"`
-}
-
 type LoginPayload struct {
 	// Access token
 	AccessToken string `json:"accessToken"`
@@ -65,32 +44,6 @@ type RevokeRefreshTokenPayload struct {
 	RefreshToken string `json:"refreshToken"`
 	// Time of deletion
 	DeletedAt time.Time `json:"deletedAt"`
-}
-
-type Tag struct {
-	// Unique tag ID
-	ID string `json:"id"`
-	// Unique tag name
-	Name string `json:"name"`
-}
-
-type User struct {
-	// Unique user ID
-	ID string `json:"id"`
-	// Unique username
-	Username string `json:"username"`
-	// User email
-	Email string `json:"email"`
-	// User kind
-	Kind UserKind `json:"kind"`
-	// User display name
-	DisplayName *string `json:"displayName"`
-	// User bio
-	Bio *string `json:"bio"`
-	// Time of creation
-	CreatedAt time.Time `json:"createdAt"`
-	// Time of last update
-	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type UserConnection struct {

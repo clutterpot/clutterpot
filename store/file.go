@@ -19,24 +19,22 @@ func newFileStore(db *sqlx.DB) *fileStore {
 }
 
 func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
-	var f model.File
-
 	/*
 		WITH f AS (
 			INSERT INTO files(id, filename, mime_type, extension, size) VALUES ( <values> )
-			RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at
+			RETURNING *
 		)[, ft AS (
 			INSERT INTO file_tags(file_id, tag_id) VALUES ( (SELECT id FROM f), unnest(array [ <values> ]) )
-		)] SELECT id, filename, mime_type, extension, size, created_at, updated_at, deleted_at FROM f
+		)] SELECT * FROM f
 	*/
-	query := sq.Select("id", "filename", "mime_type", "extension", "size", "created_at", "updated_at", "deleted_at").
-		From("f").Prefix("WITH f AS (?)", sq.Insert("files").SetMap(sq.Eq{
-		"id":        model.NewID(),
-		"filename":  input.Filename,
-		"mime_type": "test",
-		"extension": ".test",
-		"size":      0,
-	}).Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at"))
+	query := sq.Select("*").From("f").
+		Prefix("WITH f AS (?)", sq.Insert("files").SetMap(sq.Eq{
+			"id":        model.NewID(),
+			"filename":  input.Filename,
+			"mime_type": "test",
+			"extension": ".test",
+			"size":      0,
+		}).Suffix("RETURNING *"))
 
 	if input.Tags != nil && len(*input.Tags) > 0 {
 		// Convert []string to []any
@@ -52,8 +50,13 @@ func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 		}))
 	}
 
-	if err := query.PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
-		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
+	createQuery, args, err := query.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while creating a file")
+	}
+
+	var f model.File
+	if err = fs.db.Get(&f, createQuery, args...); err != nil {
 		return nil, fmt.Errorf("an error occurred while creating a file")
 	}
 
@@ -61,18 +64,14 @@ func (fs *fileStore) Create(input model.FileInput) (*model.File, error) {
 }
 
 func (fs *fileStore) Update(id string, input model.FileUpdateInput) (*model.File, error) {
-	var f model.File
-
 	/*
 		WITH f AS (
-			UPDATE files SET ( <values> ) WHERE id = $1 AND deleted_at IS NULL
-			RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at
+			UPDATE files SET ( <values> ) WHERE id = $1 AND deleted_at IS NULL RETURNING *
 		)[, ft AS (
 			INSERT INTO file_tags(file_id, tag_id) VALUES ( (SELECT id FROM f), unnest(array [ <values> ]) )
-		)] SELECT id, filename, mime_type, extension, size, created_at, updated_at, deleted_at FROM f
+		)] SELECT * FROM f
 	*/
-	query := sq.Select("id", "filename", "mime_type", "extension", "size", "created_at", "updated_at", "deleted_at").
-		From("f")
+	query := sq.Select("*").From("f")
 	fileUpdateQuery := sq.Update("files").Set("updated_at", "now()")
 
 	if input == (model.FileUpdateInput{}) {
@@ -83,8 +82,9 @@ func (fs *fileStore) Update(id string, input model.FileUpdateInput) (*model.File
 	}
 
 	// Append file update query
-	query = query.Prefix("WITH f AS (?)", fileUpdateQuery.Where(sq.And{sq.Eq{"id": id}, sq.Eq{"deleted_at": nil}}).
-		Suffix("RETURNING id, filename, mime_type, extension, size, created_at, updated_at, deleted_at"))
+	query = query.Prefix("WITH f AS (?)",
+		fileUpdateQuery.Where(sq.And{sq.Eq{"id": id}, sq.Eq{"deleted_at": nil}}).Suffix("RETURNING *"),
+	)
 
 	if input.Tags != nil && len(*input.Tags) > 0 {
 		// Convert []string to []any
@@ -100,8 +100,13 @@ func (fs *fileStore) Update(id string, input model.FileUpdateInput) (*model.File
 		}))
 	}
 
-	if err := query.PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
-		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
+	updateQuery, args, err := query.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while updating a file")
+	}
+
+	var f model.File
+	if err = fs.db.Get(&f, updateQuery, args...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("file not found")
 		}
@@ -151,12 +156,14 @@ func (fs *fileStore) RemoveTags(id string, tagIDs []string) (*model.RemoveTagsFr
 }
 
 func (fs *fileStore) GetByID(id string) (*model.File, error) {
-	var f model.File
+	query, args, err := sq.Select("*").From("files").
+		Where(sq.And{sq.Eq{"id": id}, sq.Eq{"deleted_at": nil}}).PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while getting a file by id")
+	}
 
-	if err := sq.Select("id", "filename", "mime_type", "extension", "size", "created_at", "updated_at", "deleted_at").
-		From("files").Where(sq.And{sq.Eq{"id": id}, sq.Eq{"deleted_at": nil}}).
-		PlaceholderFormat(sq.Dollar).RunWith(fs.db).QueryRow().
-		Scan(&f.ID, &f.Filename, &f.MimeType, &f.Extension, &f.Size, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt); err != nil {
+	var f model.File
+	if err := fs.db.Get(&f, query, args...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("file not found")
 		}

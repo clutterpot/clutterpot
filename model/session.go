@@ -3,11 +3,11 @@ package model
 import "time"
 
 type Session struct {
-	ID        string
-	UserID    string
-	CreatedAt time.Time
-	ExpiresAt time.Time
-	DeletedAt *time.Time
+	ID        string     `db:"id"`
+	UserID    string     `db:"user_id"`
+	CreatedAt time.Time  `db:"created_at"`
+	ExpiresAt time.Time  `db:"expires_at"`
+	DeletedAt *time.Time `db:"deleted_at"`
 }
 
 type SessionUser struct {

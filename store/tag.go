@@ -18,15 +18,17 @@ func newTagStore(db *sqlx.DB) *tagStore {
 }
 
 func (ts *tagStore) Create(input model.TagInput) (*model.Tag, error) {
-	var t model.Tag
-
-	if err := sq.Insert("tags").SetMap(sq.Eq{
+	query, args, err := sq.Insert("tags").SetMap(sq.Eq{
 		"id":       model.NewID(),
 		"owner_id": input.OwnerID,
 		"name":     input.Name,
-	}).Suffix("RETURNING id, name").
-		PlaceholderFormat(sq.Dollar).RunWith(ts.db).QueryRow().
-		Scan(&t.ID, &t.Name); err != nil {
+	}).Suffix("RETURNING id, name").PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while creating a tag")
+	}
+
+	var t model.Tag
+	if err = ts.db.Get(&t, query, args...); err != nil {
 		return nil, fmt.Errorf("an error occurred while creating a tag")
 	}
 
@@ -43,26 +45,24 @@ func (ts *tagStore) Delete(id string) error {
 }
 
 func (ts *tagStore) GetByFileIDs(fileIDs []string) (tags [][]*model.Tag, errs []error) {
-	rows, err := sq.Select("file_id", "id", "name").From("file_tags ft").
+	query, args, err := sq.Select("file_id", "id", "name").From("file_tags ft").
 		LeftJoin("tags t ON ft.tag_id = t.id").Where(sq.Eq{"file_id": fileIDs}).
-		PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
+		PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return nil, []error{err}
+		return nil, []error{fmt.Errorf("an error occurred while getting file tags")}
 	}
-	defer rows.Close()
+
+	var fts []*model.FileTag
+	if err := ts.db.Select(&fts, query, args...); err != nil {
+		return nil, []error{fmt.Errorf("an error occurred while getting file tags")}
+	}
 
 	t := make(map[string][]*model.Tag)
-	for rows.Next() {
-		var fileID string
-		var tag model.Tag
-		if err := rows.Scan(&fileID, &tag.ID, &tag.Name); err != nil {
-			errs = append(errs, err)
-		}
-		t[fileID] = append(t[fileID], &tag)
+	for _, ft := range fts {
+		t[ft.FileID] = append(t[ft.FileID], &ft.Tag)
 	}
 
 	tags = make([][]*model.Tag, len(fileIDs))
-
 	for i, id := range fileIDs {
 		tags[i] = t[id]
 	}
