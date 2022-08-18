@@ -38,7 +38,7 @@ func getAll[T model.Node](db *sqlx.DB, table string, after, before *string, firs
 	}
 
 	var c model.Connection[T]
-	if err = db.Select(&c.Nodes, paginatedQuery, args...); err != nil {
+	if err = db.Select(&c.Nodes, paginatedQuery, args...); err != nil || len(c.Nodes) == 0 {
 		if err == sql.ErrNoRows || len(c.Nodes) == 0 {
 			return nil, fmt.Errorf("%s not found", table)
 		}

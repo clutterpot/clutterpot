@@ -27,6 +27,25 @@ type File implements Node {
   deletedAt: Time
 }
 
+type FileConnection {
+  "File edges"
+  edges: [FileEdge]
+
+  "File nodes"
+  nodes: [File]
+
+  "Page info"
+  pageInfo: PageInfo!
+}
+
+type FileEdge {
+  "Pagination cursor"
+  cursor: String!
+
+  "File node"
+  node: File
+}
+
 input FileInput {
   "Filename"
   filename: String!
@@ -57,4 +76,9 @@ type RemoveTagsFromFilePayload {
 
   "Removed tags"
   tags: [Tag!]!
+}
+
+enum FileSort {
+  CREATED
+  UPDATED
 }

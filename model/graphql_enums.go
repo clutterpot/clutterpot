@@ -78,3 +78,38 @@ func (e UserSort) MarshalGQL(w io.Writer) {
 		fmt.Fprint(w, strconv.Quote("UPDATED"))
 	}
 }
+
+var fileSortValues = map[string]FileSort{
+	"CREATED": FileSortCreated,
+	"UPDATED": FileSortUpdated,
+}
+
+func (e FileSort) IsValid() bool {
+	switch e {
+	case FileSortCreated, FileSortUpdated:
+		return true
+	}
+	return false
+}
+
+func (e *FileSort) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = fileSortValues[str]
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FileSort enum", str)
+	}
+	return nil
+}
+
+func (e FileSort) MarshalGQL(w io.Writer) {
+	switch e {
+	case FileSortCreated:
+		fmt.Fprint(w, strconv.Quote("CREATED"))
+	case FileSortUpdated:
+		fmt.Fprint(w, strconv.Quote("UPDATED"))
+	}
+}

@@ -18,4 +18,14 @@ type Query {
 
   "Get file by ID"
   file("File ID" id: ID!): File
+
+  "Get all files"
+  files(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    sort: FileSort = CREATED
+    order: Order = DESC
+  ): FileConnection
 }

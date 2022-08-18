@@ -14,6 +14,10 @@ func (r *queryResolver) File(ctx context.Context, id string) (*model.File, error
 	return r.Store.File.GetByID(id)
 }
 
+func (r *queryResolver) Files(ctx context.Context, after, before *string, first, last *int, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {
+	return r.Store.File.GetAll(after, before, first, last, sort, order)
+}
+
 // Mutation resolvers
 
 func (r *mutationResolver) CreateFile(ctx context.Context, input model.FileInput) (*model.File, error) {

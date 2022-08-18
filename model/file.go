@@ -17,6 +17,16 @@ type File struct {
 func (File) IsNode()         {}
 func (f File) GetID() string { return f.ID }
 
+type FileConnection = Connection[File]
+type FileEdge = Edge[File]
+
+type FileSort string
+
+const (
+	FileSortCreated FileSort = "created_at"
+	FileSortUpdated FileSort = "updated_at"
+)
+
 type FileInput struct {
 	Filename string    `json:"filename" validate:"required,filename,printunicode,min=1,max=255"`
 	Tags     *[]string `json:"tags" validate:"omitempty"`
