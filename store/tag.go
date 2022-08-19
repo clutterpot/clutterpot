@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/clutterpot/clutterpot/model"
@@ -42,6 +43,30 @@ func (ts *tagStore) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func (ts *tagStore) GetByID(id, ownerID string) (*model.Tag, error) {
+	query, args, err := sq.Select("*").From("tags").
+		Where(sq.And{
+			sq.Eq{"id": id},
+			sq.Or{
+				sq.Eq{"owner_id": ownerID},
+				sq.Eq{"owner_id": nil},
+			}}).PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred while getting a tag by id")
+	}
+
+	var t model.Tag
+	if err := ts.db.Get(&t, query, args...); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("tag not found")
+		}
+
+		return nil, fmt.Errorf("an error occurred while getting a tag by id")
+	}
+
+	return &t, nil
 }
 
 func (ts *tagStore) GetByFileIDs(fileIDs []string) (tags [][]*model.Tag, errs []error) {

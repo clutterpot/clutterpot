@@ -28,4 +28,9 @@ type Query {
     sort: FileSort = CREATED
     order: Order = DESC
   ): FileConnection
+
+  # Tag
+
+  "Get tag by ID"
+  tag("Tag ID" id: ID!): Tag
 }

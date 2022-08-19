@@ -1,9 +1,9 @@
 package model
 
 type Tag struct {
-	ID      string `json:"id" db:"id" `
-	OwnerID string `json:"-" db:"owner_id"`
-	Name    string `json:"name" db:"name"`
+	ID      string  `json:"id" db:"id" `
+	OwnerID *string `json:"-" db:"owner_id"`
+	Name    string  `json:"name" db:"name"`
 }
 
 func (Tag) IsNode()         {}

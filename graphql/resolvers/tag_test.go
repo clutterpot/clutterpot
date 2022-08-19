@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +30,34 @@ func TestTagResolvers(t *testing.T) {
 	middlewares := chi.Middlewares{jwtauth.Verifier(auth.JWT())}
 	gqlClient := client.New(middlewares.Handler(gqlServer))
 
+	t.Run("Tag", func(t *testing.T) { testTagResolvers_Tag(t, gqlClient, store) })
 	t.Run("CreateTag", func(t *testing.T) { testTagResolvers_CreateTag(t, gqlClient, store, auth) })
+}
+
+func testTagResolvers_Tag(t *testing.T, c *client.Client, s *store.Store) {
+	tag, err := s.Tag.Create(model.TagInput{Name: "test_" + model.NewID()})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, s.Tag.Delete(tag.ID)) }()
+
+	query := `
+		query tag($id: ID!) {
+			tag(id: $id) {
+				id
+			}
+		}
+		`
+
+	var resp struct {
+		Tag struct {
+			ID string
+		}
+	}
+	err = c.Post(query, &resp, client.Var("id", tag.ID))
+	require.NoError(t, err, "cannot get tag by id")
+	assert.Equal(t, tag.ID, resp.Tag.ID, "tag id should have been the same")
+
+	err = c.Post(query, &resp, client.Var("id", model.NewID()))
+	require.Error(t, err, "'tag not found' error should have been returned")
 }
 
 func testTagResolvers_CreateTag(t *testing.T, c *client.Client, s *store.Store, a *auth.Auth) {

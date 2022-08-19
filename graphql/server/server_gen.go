@@ -106,6 +106,7 @@ type ComplexityRoot struct {
 	Query struct {
 		File  func(childComplexity int, id string) int
 		Files func(childComplexity int, after *string, before *string, first *int, last *int, sort *model.FileSort, order *model.Order) int
+		Tag   func(childComplexity int, id string) int
 		User  func(childComplexity int, id string) int
 		Users func(childComplexity int, after *string, before *string, first *int, last *int, sort *model.UserSort, order *model.Order) int
 	}
@@ -173,6 +174,7 @@ type QueryResolver interface {
 	Users(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.UserSort, order *model.Order) (*model.Connection[model.User], error)
 	File(ctx context.Context, id string) (*model.File, error)
 	Files(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.FileSort, order *model.Order) (*model.Connection[model.File], error)
+	Tag(ctx context.Context, id string) (*model.Tag, error)
 }
 type RemoveTagsFromFilePayloadResolver interface {
 	File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error)
@@ -498,6 +500,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Files(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["sort"].(*model.FileSort), args["order"].(*model.Order)), true
+
+	case "Query.tag":
+		if e.complexity.Query.Tag == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tag_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tag(childComplexity, args["id"].(string)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -945,6 +959,11 @@ enum FileSort {
     sort: FileSort = CREATED
     order: Order = DESC
   ): FileConnection
+
+  # Tag
+
+  "Get tag by ID"
+  tag("Tag ID" id: ID!): Tag
 }
 `, BuiltIn: false},
 	{Name: "../schema/schema.graphql", Input: `schema {
@@ -1397,6 +1416,21 @@ func (ec *executionContext) field_Query_files_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["order"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tag_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3636,6 +3670,64 @@ func (ec *executionContext) fieldContext_Query_files(ctx context.Context, field 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_files_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tag(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Tag(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Tag)
+	fc.Result = res
+	return ec.marshalOTag2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTag(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tag_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tag_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tag_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -7251,6 +7343,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_files(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tag":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tag(ctx, field)
 				return res
 			}
 
