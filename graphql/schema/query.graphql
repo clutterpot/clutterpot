@@ -33,4 +33,14 @@ type Query {
 
   "Get tag by ID"
   tag("Tag ID" id: ID!): Tag
+
+  "Get all tags"
+  tags(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    sort: TagSort = CREATED
+    order: Order = DESC
+  ): TagConnection
 }

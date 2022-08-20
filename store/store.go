@@ -27,10 +27,7 @@ func New(db *sqlx.DB) *Store {
 	}
 }
 
-func getAll[T model.Node](db *sqlx.DB, table string, after, before *string, first, last *int, sort string, order model.Order) (*model.Connection[T], error) {
-	// Base query
-	query := sq.Select("*").From(table)
-
+func getAll[T model.Node](db *sqlx.DB, query sq.SelectBuilder, table string, after, before *string, first, last *int, sort string, order model.Order) (*model.Connection[T], error) {
 	// Build paginated query
 	paginatedQuery, args, err := pagination.PaginateQuery(query, after, before, first, last, sort, order)
 	if err != nil {

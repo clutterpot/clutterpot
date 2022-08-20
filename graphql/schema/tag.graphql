@@ -6,10 +6,34 @@ type Tag implements Node {
   name: String!
 }
 
+type TagConnection {
+  "Tag edges"
+  edges: [TagEdge]
+
+  "Tag nodes"
+  nodes: [Tag]
+
+  "Page info"
+  pageInfo: PageInfo!
+}
+
+type TagEdge {
+  "Pagination cursor"
+  cursor: String!
+
+  "Tag node"
+  node: Tag
+}
+
 input TagInput {
   "Tag name"
   name: String!
 
   "Determines whether tag will be accessible for other users"
   private: Boolean! = false
+}
+
+enum TagSort {
+  CREATED
+  UPDATED
 }

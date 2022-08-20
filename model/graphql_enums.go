@@ -113,3 +113,38 @@ func (e FileSort) MarshalGQL(w io.Writer) {
 		fmt.Fprint(w, strconv.Quote("UPDATED"))
 	}
 }
+
+var tagSortValues = map[string]TagSort{
+	"CREATED": TagSortCreated,
+	"UPDATED": TagSortUpdated,
+}
+
+func (e TagSort) IsValid() bool {
+	switch e {
+	case TagSortCreated, TagSortUpdated:
+		return true
+	}
+	return false
+}
+
+func (e *TagSort) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = tagSortValues[str]
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TagSort enum", str)
+	}
+	return nil
+}
+
+func (e TagSort) MarshalGQL(w io.Writer) {
+	switch e {
+	case TagSortCreated:
+		fmt.Fprint(w, strconv.Quote("CREATED"))
+	case TagSortUpdated:
+		fmt.Fprint(w, strconv.Quote("UPDATED"))
+	}
+}

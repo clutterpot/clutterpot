@@ -25,7 +25,7 @@ func (us *userStore) Create(input model.UserInput) (*model.User, error) {
 		"password": model.HashPassword(input.Password),
 		"email":    input.Email,
 		"kind":     model.UserKindUser,
-	}).Suffix("RETURNING id, username, email, kind, display_name, bio, created_at, updated_at").
+	}).Suffix("RETURNING *").
 		PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred while creating a user")
@@ -65,7 +65,7 @@ func (us *userStore) Update(id string, input model.UserUpdateInput) (*model.User
 	}
 
 	updateQuery, args, err := query.Where("id = ?", id).
-		Suffix("RETURNING id, username, email, kind, display_name, bio, created_at, updated_at").
+		Suffix("RETURNING *").
 		PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred while updating a user")
@@ -93,7 +93,7 @@ func (us *userStore) Delete(id string) error {
 }
 
 func (us *userStore) GetByID(id string) (*model.User, error) {
-	query, args, err := sq.Select("id", "username", "email", "kind", "display_name", "bio", "created_at", "updated_at").
+	query, args, err := sq.Select("*").
 		From("users").Where("id = ?", id).PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred while getting a user by id")
@@ -112,14 +112,14 @@ func (us *userStore) GetByID(id string) (*model.User, error) {
 }
 
 // Only for auth purposes
-func (us *userStore) GetByEmail(email string) (*model.AuthUser, error) {
+func (us *userStore) GetByEmail(email string) (*model.User, error) {
 	query, args, err := sq.Select("*").From("users").
 		Where("email = ?", email).PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred while getting a user by email")
 	}
 
-	var u model.AuthUser
+	var u model.User
 	if err = us.db.Get(&u, query, args...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("invalid email or password")
@@ -132,5 +132,5 @@ func (us *userStore) GetByEmail(email string) (*model.AuthUser, error) {
 }
 
 func (us *userStore) GetAll(after, before *string, first, last *int, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {
-	return getAll[model.User](us.db, "users", after, before, first, last, string(*sort), *order)
+	return getAll[model.User](us.db, sq.Select("*").From("users"), "users", after, before, first, last, string(*sort), *order)
 }

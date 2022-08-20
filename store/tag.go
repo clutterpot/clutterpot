@@ -69,6 +69,13 @@ func (ts *tagStore) GetByID(id, ownerID string) (*model.Tag, error) {
 	return &t, nil
 }
 
+func (ts *tagStore) GetAll(ownerID string, after, before *string, first, last *int, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
+	return getAll[model.Tag](ts.db, sq.Select("*").From("tags").Where(sq.Or{
+		sq.Eq{"owner_id": ownerID},
+		sq.Eq{"owner_id": nil},
+	}), "tags", after, before, first, last, string(*sort), *order)
+}
+
 func (ts *tagStore) GetByFileIDs(fileIDs []string) (tags [][]*model.Tag, errs []error) {
 	query, args, err := sq.Select("file_id", "id", "name").From("file_tags ft").
 		LeftJoin("tags t ON ft.tag_id = t.id").Where(sq.Eq{"file_id": fileIDs}).
