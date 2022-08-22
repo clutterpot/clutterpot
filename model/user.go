@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,6 +26,22 @@ func (u User) GetID() string { return u.ID }
 
 type UserConnection = Connection[User]
 type UserEdge = Edge[User]
+type UserKindFilter = ScalarFilter[UserKind]
+
+func (u *UserFilter) GetConj() sq.And {
+	var and sq.And
+
+	and = u.ID.GetConj(and, "id")
+	and = u.Username.GetConj(and, "username")
+	and = u.Email.GetConj(and, "email")
+	and = u.Kind.GetConj(and, "kind")
+	and = u.DisplayName.GetConj(and, "display_name")
+	and = u.Bio.GetConj(and, "bio")
+	and = u.CreatedAt.GetConj(and, "created_at")
+	and = u.UpdatedAt.GetConj(and, "updated_at")
+
+	return and
+}
 
 type UserKind int8
 

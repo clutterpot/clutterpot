@@ -1,0 +1,47 @@
+input StringFilter {
+  "Equal"
+  eq: String
+
+  "Less than"
+  lt: String
+
+  "Grater than"
+  gt: String
+
+  "Less equal"
+  leq: String
+
+  "Greater equal"
+  geq: String
+
+  "In"
+  in: [String]
+}
+
+input IDFilter {
+  "Equal"
+  eq: ID
+
+  "In"
+  in: [ID]
+}
+
+input TimeFilter {
+  "Equal"
+  eq: Time
+
+  "Less than"
+  lt: Time
+
+  "Grater than"
+  gt: Time
+
+  "Less equal"
+  leq: Time
+
+  "Greater equal"
+  geq: Time
+
+  "In"
+  in: [Time]
+}

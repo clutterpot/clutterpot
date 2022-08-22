@@ -109,7 +109,7 @@ type ComplexityRoot struct {
 		Tag   func(childComplexity int, id string) int
 		Tags  func(childComplexity int, after *string, before *string, first *int, last *int, sort *model.TagSort, order *model.Order) int
 		User  func(childComplexity int, id string) int
-		Users func(childComplexity int, after *string, before *string, first *int, last *int, sort *model.UserSort, order *model.Order) int
+		Users func(childComplexity int, after *string, before *string, first *int, last *int, filter *model.UserFilter, sort *model.UserSort, order *model.Order) int
 	}
 
 	RefreshAccessTokenPayload struct {
@@ -183,7 +183,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
-	Users(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.UserSort, order *model.Order) (*model.Connection[model.User], error)
+	Users(ctx context.Context, after *string, before *string, first *int, last *int, filter *model.UserFilter, sort *model.UserSort, order *model.Order) (*model.Connection[model.User], error)
 	File(ctx context.Context, id string) (*model.File, error)
 	Files(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.FileSort, order *model.Order) (*model.Connection[model.File], error)
 	Tag(ctx context.Context, id string) (*model.Tag, error)
@@ -560,7 +560,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["sort"].(*model.UserSort), args["order"].(*model.Order)), true
+		return e.complexity.Query.Users(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["filter"].(*model.UserFilter), args["sort"].(*model.UserSort), args["order"].(*model.Order)), true
 
 	case "RefreshAccessTokenPayload.accessToken":
 		if e.complexity.RefreshAccessTokenPayload.AccessToken == nil {
@@ -754,8 +754,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputFileInput,
 		ec.unmarshalInputFileUpdateInput,
+		ec.unmarshalInputIDFilter,
+		ec.unmarshalInputStringFilter,
 		ec.unmarshalInputTagInput,
+		ec.unmarshalInputTimeFilter,
+		ec.unmarshalInputUserFilter,
 		ec.unmarshalInputUserInput,
+		ec.unmarshalInputUserKindFilter,
 		ec.unmarshalInputUserUpdateInput,
 	)
 	first := true
@@ -931,6 +936,54 @@ enum FileSort {
   UPDATED
 }
 `, BuiltIn: false},
+	{Name: "../schema/filters.graphql", Input: `input StringFilter {
+  "Equal"
+  eq: String
+
+  "Less than"
+  lt: String
+
+  "Grater than"
+  gt: String
+
+  "Less equal"
+  leq: String
+
+  "Greater equal"
+  geq: String
+
+  "In"
+  in: [String]
+}
+
+input IDFilter {
+  "Equal"
+  eq: ID
+
+  "In"
+  in: [ID]
+}
+
+input TimeFilter {
+  "Equal"
+  eq: Time
+
+  "Less than"
+  lt: Time
+
+  "Grater than"
+  gt: Time
+
+  "Less equal"
+  leq: Time
+
+  "Greater equal"
+  geq: Time
+
+  "In"
+  in: [Time]
+}
+`, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
   # Auth
 
@@ -1001,6 +1054,7 @@ enum FileSort {
     before: String
     first: Int
     last: Int
+    filter: UserFilter
     sort: UserSort = CREATED
     order: Order = DESC
   ): UserConnection
@@ -1174,6 +1228,40 @@ input UserUpdateInput {
 
   "User bio"
   bio: String
+}
+
+input UserFilter {
+  "User ID filter"
+  id: IDFilter
+
+  "Username filter"
+  username: StringFilter
+
+  "User email filter"
+  email: StringFilter
+
+  "User kind filter"
+  kind: UserKindFilter
+
+  "User display name filter"
+  displayName: StringFilter
+
+  "User bio filter"
+  bio: StringFilter
+
+  "Time of creation filter"
+  createdAt: TimeFilter
+
+  "Time of last update filter"
+  updatedAt: TimeFilter
+}
+
+input UserKindFilter {
+  "Equal"
+  eq: UserKind
+
+  "In"
+  in: [UserKind]
 }
 
 enum UserKind {
@@ -1642,24 +1730,33 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["last"] = arg3
-	var arg4 *model.UserSort
+	var arg4 *model.UserFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg4, err = ec.unmarshalOUserFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg4
+	var arg5 *model.UserSort
 	if tmp, ok := rawArgs["sort"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
-		arg4, err = ec.unmarshalOUserSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserSort(ctx, tmp)
+		arg5, err = ec.unmarshalOUserSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserSort(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["sort"] = arg4
-	var arg5 *model.Order
+	args["sort"] = arg5
+	var arg6 *model.Order
 	if tmp, ok := rawArgs["order"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
-		arg5, err = ec.unmarshalOOrder2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐOrder(ctx, tmp)
+		arg6, err = ec.unmarshalOOrder2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐOrder(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["order"] = arg5
+	args["order"] = arg6
 	return args, nil
 }
 
@@ -3652,7 +3749,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx, fc.Args["after"].(*string), fc.Args["before"].(*string), fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["sort"].(*model.UserSort), fc.Args["order"].(*model.Order))
+		return ec.resolvers.Query().Users(rctx, fc.Args["after"].(*string), fc.Args["before"].(*string), fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["filter"].(*model.UserFilter), fc.Args["sort"].(*model.UserSort), fc.Args["order"].(*model.Order))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7148,6 +7245,110 @@ func (ec *executionContext) unmarshalInputFileUpdateInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputIDFilter(ctx context.Context, obj interface{}) (model.ScalarFilter[string], error) {
+	var it model.ScalarFilter[string]
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"eq", "in"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "eq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
+			it.Eq, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "in":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
+			it.In, err = ec.unmarshalOID2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputStringFilter(ctx context.Context, obj interface{}) (model.ScalarFilter[string], error) {
+	var it model.ScalarFilter[string]
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"eq", "lt", "gt", "leq", "geq", "in"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "eq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
+			it.Eq, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
+			it.Lt, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "gt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
+			it.Gt, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "leq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leq"))
+			it.Leq, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "geq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("geq"))
+			it.Geq, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "in":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
+			it.In, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTagInput(ctx context.Context, obj interface{}) (model.TagInput, error) {
 	var it model.TagInput
 	asMap := map[string]interface{}{}
@@ -7179,6 +7380,158 @@ func (ec *executionContext) unmarshalInputTagInput(ctx context.Context, obj inte
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("private"))
 			it.Private, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTimeFilter(ctx context.Context, obj interface{}) (model.ScalarFilter[time.Time], error) {
+	var it model.ScalarFilter[time.Time]
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"eq", "lt", "gt", "leq", "geq", "in"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "eq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
+			it.Eq, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
+			it.Lt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "gt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
+			it.Gt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "leq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leq"))
+			it.Leq, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "geq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("geq"))
+			it.Geq, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "in":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
+			it.In, err = ec.unmarshalOTime2ᚕᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserFilter(ctx context.Context, obj interface{}) (model.UserFilter, error) {
+	var it model.UserFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "username", "email", "kind", "displayName", "bio", "createdAt", "updatedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalOIDFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "username":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			it.Email, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "kind":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			it.Kind, err = ec.unmarshalOUserKindFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			it.DisplayName, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bio":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bio"))
+			it.Bio, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "createdAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			it.CreatedAt, err = ec.unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "updatedAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
+			it.UpdatedAt, err = ec.unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7223,6 +7576,42 @@ func (ec *executionContext) unmarshalInputUserInput(ctx context.Context, obj int
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
 			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserKindFilter(ctx context.Context, obj interface{}) (model.ScalarFilter[model.UserKind], error) {
+	var it model.ScalarFilter[model.UserKind]
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"eq", "in"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "eq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
+			it.Eq, err = ec.unmarshalOUserKind2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "in":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
+			it.In, err = ec.unmarshalOUserKind2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9223,6 +9612,38 @@ func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast
 	return ret
 }
 
+func (ec *executionContext) unmarshalOID2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOID2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOID2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -9249,6 +9670,14 @@ func (ec *executionContext) unmarshalOID2ᚖᚕstringᚄ(ctx context.Context, v 
 
 func (ec *executionContext) marshalOID2ᚖᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v *[]string) graphql.Marshaler {
 	return ec.marshalOID2ᚕstringᚄ(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOIDFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx context.Context, v interface{}) (*model.ScalarFilter[string], error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputIDFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
@@ -9311,6 +9740,38 @@ func (ec *executionContext) marshalORevokeRefreshTokenPayload2ᚖgithubᚗcomᚋ
 	return ec._RevokeRefreshTokenPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -9325,6 +9786,14 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx context.Context, v interface{}) (*model.ScalarFilter[string], error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputStringFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTag(ctx context.Context, sel ast.SelectionSet, v []*model.Tag) graphql.Marshaler {
@@ -9493,6 +9962,38 @@ func (ec *executionContext) marshalOTagSort2ᚖgithubᚗcomᚋclutterpotᚋclutt
 	return v
 }
 
+func (ec *executionContext) unmarshalOTime2ᚕᚖtimeᚐTime(ctx context.Context, v interface{}) ([]*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*time.Time, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOTime2ᚕᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v []*time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOTime2ᚖtimeᚐTime(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
 	if v == nil {
 		return nil, nil
@@ -9507,6 +10008,14 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	}
 	res := graphql.MarshalTime(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx context.Context, v interface{}) (*model.ScalarFilter[time.Time], error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTimeFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
@@ -9612,6 +10121,75 @@ func (ec *executionContext) marshalOUserEdge2ᚖgithubᚗcomᚋclutterpotᚋclut
 	return ec._UserEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOUserFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserFilter(ctx context.Context, v interface{}) (*model.UserFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUserKind2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx context.Context, v interface{}) ([]*model.UserKind, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.UserKind, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUserKind2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOUserKind2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx context.Context, sel ast.SelectionSet, v []*model.UserKind) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOUserKind2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOUserKind2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserKind(ctx context.Context, v interface{}) (*model.UserKind, error) {
 	if v == nil {
 		return nil, nil
@@ -9626,6 +10204,14 @@ func (ec *executionContext) marshalOUserKind2ᚖgithubᚗcomᚋclutterpotᚋclut
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOUserKindFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx context.Context, v interface{}) (*model.ScalarFilter[model.UserKind], error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserKindFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOUserSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserSort(ctx context.Context, v interface{}) (*model.UserSort, error) {

@@ -46,6 +46,25 @@ type RevokeRefreshTokenPayload struct {
 	DeletedAt time.Time `json:"deletedAt"`
 }
 
+type UserFilter struct {
+	// User ID filter
+	ID *ScalarFilter[string] `json:"id"`
+	// Username filter
+	Username *ScalarFilter[string] `json:"username"`
+	// User email filter
+	Email *ScalarFilter[string] `json:"email"`
+	// User kind filter
+	Kind *ScalarFilter[UserKind] `json:"kind"`
+	// User display name filter
+	DisplayName *ScalarFilter[string] `json:"displayName"`
+	// User bio filter
+	Bio *ScalarFilter[string] `json:"bio"`
+	// Time of creation filter
+	CreatedAt *ScalarFilter[time.Time] `json:"createdAt"`
+	// Time of last update filter
+	UpdatedAt *ScalarFilter[time.Time] `json:"updatedAt"`
+}
+
 type Order string
 
 const (

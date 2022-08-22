@@ -10,6 +10,7 @@ type Query {
     before: String
     first: Int
     last: Int
+    filter: UserFilter
     sort: UserSort = CREATED
     order: Order = DESC
   ): UserConnection

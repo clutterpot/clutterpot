@@ -74,6 +74,40 @@ input UserUpdateInput {
   bio: String
 }
 
+input UserFilter {
+  "User ID filter"
+  id: IDFilter
+
+  "Username filter"
+  username: StringFilter
+
+  "User email filter"
+  email: StringFilter
+
+  "User kind filter"
+  kind: UserKindFilter
+
+  "User display name filter"
+  displayName: StringFilter
+
+  "User bio filter"
+  bio: StringFilter
+
+  "Time of creation filter"
+  createdAt: TimeFilter
+
+  "Time of last update filter"
+  updatedAt: TimeFilter
+}
+
+input UserKindFilter {
+  "Equal"
+  eq: UserKind
+
+  "In"
+  in: [UserKind]
+}
+
 enum UserKind {
   "Banned user"
   BANNED

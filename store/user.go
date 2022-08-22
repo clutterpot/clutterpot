@@ -131,6 +131,6 @@ func (us *userStore) GetByEmail(email string) (*model.User, error) {
 	return &u, nil
 }
 
-func (us *userStore) GetAll(after, before *string, first, last *int, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {
-	return getAll[model.User](us.db, sq.Select("*").From("users"), "users", after, before, first, last, string(*sort), *order)
+func (us *userStore) GetAll(after, before *string, first, last *int, filter *model.UserFilter, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {
+	return getAll[model.User](us.db, sq.Select("*").From("users").Where(filter.GetConj()), "users", after, before, first, last, string(*sort), *order)
 }
