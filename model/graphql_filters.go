@@ -7,10 +7,12 @@ import (
 )
 
 type Filter interface {
-	GetConj() sq.And
+	GetConj() []sq.Sqlizer
 }
 
 type ScalarFilter[T any] struct {
+	And *ScalarFilter[T]
+	Or  *ScalarFilter[T]
 	Eq  *T
 	Lt  *T
 	Gt  *T
@@ -23,28 +25,31 @@ type StringFilter = ScalarFilter[string]
 type IDFilter = ScalarFilter[string]
 type TimeFilter = ScalarFilter[time.Time]
 
-func (f *ScalarFilter[T]) GetConj(and sq.And, column string) sq.And {
+func (f *ScalarFilter[T]) GetConj(conj sq.And, column string) sq.And {
 	if f == nil {
-		return and
-	}
-	if f.Eq != nil {
-		return append(and, sq.Eq{column: *f.Eq})
-	}
-	if f.Lt != nil {
-		return append(and, sq.Lt{column: *f.Lt})
-	}
-	if f.Gt != nil {
-		return append(and, sq.Gt{column: *f.Gt})
-	}
-	if f.Leq != nil {
-		return append(and, sq.LtOrEq{column: *f.Leq})
-	}
-	if f.Geq != nil {
-		return append(and, sq.GtOrEq{column: *f.Geq})
-	}
-	if f.In != nil {
-		return append(and, sq.Eq{column: f.In})
+		return conj
 	}
 
-	return and
+	if f.Eq != nil {
+		conj = append(conj, sq.Eq{column: *f.Eq})
+	} else if f.Lt != nil {
+		conj = append(conj, sq.Lt{column: *f.Lt})
+	} else if f.Gt != nil {
+		conj = append(conj, sq.Gt{column: *f.Gt})
+	} else if f.Leq != nil {
+		conj = append(conj, sq.LtOrEq{column: *f.Leq})
+	} else if f.Geq != nil {
+		conj = append(conj, sq.GtOrEq{column: *f.Geq})
+	} else if f.In != nil {
+		conj = append(conj, sq.Eq{column: f.In})
+	}
+
+	if f.And != nil {
+		conj = append(conj, f.And.GetConj(sq.And{}, column)...)
+	}
+	if f.Or != nil {
+		conj = sq.And{sq.Or{conj, f.Or.GetConj(sq.And{}, column)}}
+	}
+
+	return conj
 }

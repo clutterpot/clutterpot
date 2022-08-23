@@ -937,6 +937,12 @@ enum FileSort {
 }
 `, BuiltIn: false},
 	{Name: "../schema/filters.graphql", Input: `input StringFilter {
+  "And"
+  and: StringFilter
+
+  "Or"
+  or: StringFilter
+
   "Equal"
   eq: String
 
@@ -957,6 +963,12 @@ enum FileSort {
 }
 
 input IDFilter {
+  "And"
+  and: IDFilter
+
+  "Or"
+  or: IDFilter
+
   "Equal"
   eq: ID
 
@@ -965,6 +977,12 @@ input IDFilter {
 }
 
 input TimeFilter {
+  "And"
+  and: TimeFilter
+
+  "Or"
+  or: TimeFilter
+
   "Equal"
   eq: Time
 
@@ -1231,6 +1249,12 @@ input UserUpdateInput {
 }
 
 input UserFilter {
+  "And"
+  and: UserFilter
+
+  "Or"
+  or: UserFilter
+
   "User ID filter"
   id: IDFilter
 
@@ -7252,13 +7276,29 @@ func (ec *executionContext) unmarshalInputIDFilter(ctx context.Context, obj inte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"eq", "in"}
+	fieldsInOrder := [...]string{"and", "or", "eq", "in"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOIDFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOIDFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "eq":
 			var err error
 
@@ -7288,13 +7328,29 @@ func (ec *executionContext) unmarshalInputStringFilter(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"eq", "lt", "gt", "leq", "geq", "in"}
+	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "leq", "geq", "in"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "eq":
 			var err error
 
@@ -7396,13 +7452,29 @@ func (ec *executionContext) unmarshalInputTimeFilter(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"eq", "lt", "gt", "leq", "geq", "in"}
+	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "leq", "geq", "in"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "eq":
 			var err error
 
@@ -7464,13 +7536,29 @@ func (ec *executionContext) unmarshalInputUserFilter(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "username", "email", "kind", "displayName", "bio", "createdAt", "updatedAt"}
+	fieldsInOrder := [...]string{"and", "or", "id", "username", "email", "kind", "displayName", "bio", "createdAt", "updatedAt"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOUserFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOUserFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUserFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "id":
 			var err error
 

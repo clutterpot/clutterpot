@@ -47,6 +47,10 @@ type RevokeRefreshTokenPayload struct {
 }
 
 type UserFilter struct {
+	// And
+	And *UserFilter `json:"and"`
+	// Or
+	Or *UserFilter `json:"or"`
 	// User ID filter
 	ID *ScalarFilter[string] `json:"id"`
 	// Username filter

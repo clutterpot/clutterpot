@@ -75,6 +75,12 @@ input UserUpdateInput {
 }
 
 input UserFilter {
+  "And"
+  and: UserFilter
+
+  "Or"
+  or: UserFilter
+
   "User ID filter"
   id: IDFilter
 

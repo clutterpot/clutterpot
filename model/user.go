@@ -29,18 +29,25 @@ type UserEdge = Edge[User]
 type UserKindFilter = ScalarFilter[UserKind]
 
 func (u *UserFilter) GetConj() sq.And {
-	var and sq.And
+	var conj sq.And
 
-	and = u.ID.GetConj(and, "id")
-	and = u.Username.GetConj(and, "username")
-	and = u.Email.GetConj(and, "email")
-	and = u.Kind.GetConj(and, "kind")
-	and = u.DisplayName.GetConj(and, "display_name")
-	and = u.Bio.GetConj(and, "bio")
-	and = u.CreatedAt.GetConj(and, "created_at")
-	and = u.UpdatedAt.GetConj(and, "updated_at")
+	conj = u.ID.GetConj(conj, "id")
+	conj = u.Username.GetConj(conj, "username")
+	conj = u.Email.GetConj(conj, "email")
+	conj = u.Kind.GetConj(conj, "kind")
+	conj = u.DisplayName.GetConj(conj, "display_name")
+	conj = u.Bio.GetConj(conj, "bio")
+	conj = u.CreatedAt.GetConj(conj, "created_at")
+	conj = u.UpdatedAt.GetConj(conj, "updated_at")
 
-	return and
+	if u.And != nil {
+		conj = append(conj, u.And.GetConj()...)
+	}
+	if u.Or != nil {
+		conj = sq.And{sq.Or{conj, u.Or.GetConj()}}
+	}
+
+	return conj
 }
 
 type UserKind int8

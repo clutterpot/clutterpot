@@ -1,4 +1,10 @@
 input StringFilter {
+  "And"
+  and: StringFilter
+
+  "Or"
+  or: StringFilter
+
   "Equal"
   eq: String
 
@@ -19,6 +25,12 @@ input StringFilter {
 }
 
 input IDFilter {
+  "And"
+  and: IDFilter
+
+  "Or"
+  or: IDFilter
+
   "Equal"
   eq: ID
 
@@ -27,6 +39,12 @@ input IDFilter {
 }
 
 input TimeFilter {
+  "And"
+  and: TimeFilter
+
+  "Or"
+  or: TimeFilter
+
   "Equal"
   eq: Time
 
