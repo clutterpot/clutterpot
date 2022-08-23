@@ -1,10 +1,5 @@
 package model
 
-type Node interface {
-	IsNode()
-	GetID() string
-}
-
 type Connection[T any] struct {
 	Edges    []*Edge[T] `json:"edges"`
 	Nodes    []*T       `json:"nodes"`

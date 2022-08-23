@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type Node interface {
+	IsNode()
+	GetID() string
+}
+
 type DeleteFilePayload struct {
 	// Unique file ID
 	ID string `json:"id"`

@@ -988,10 +988,10 @@ enum FileSort {
   gt: String
 
   "Less equal"
-  leq: String
+  le: String
 
   "Greater equal"
-  geq: String
+  ge: String
 
   "In"
   in: [String]
@@ -1028,10 +1028,10 @@ input TimeFilter {
   gt: Time
 
   "Less equal"
-  leq: Time
+  le: Time
 
   "Greater equal"
-  geq: Time
+  ge: Time
 
   "In"
   in: [Time]
@@ -1054,10 +1054,10 @@ input Int64Filter {
   gt: Int64
 
   "Less equal"
-  leq: Int64
+  le: Int64
 
   "Greater equal"
-  geq: Int64
+  ge: Int64
 
   "In"
   in: [Int64]
@@ -7523,7 +7523,7 @@ func (ec *executionContext) unmarshalInputInt64Filter(ctx context.Context, obj i
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "leq", "geq", "in"}
+	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "le", "ge", "in"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7570,19 +7570,19 @@ func (ec *executionContext) unmarshalInputInt64Filter(ctx context.Context, obj i
 			if err != nil {
 				return it, err
 			}
-		case "leq":
+		case "le":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leq"))
-			it.Leq, err = ec.unmarshalOInt642ᚖint64(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("le"))
+			it.Le, err = ec.unmarshalOInt642ᚖint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "geq":
+		case "ge":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("geq"))
-			it.Geq, err = ec.unmarshalOInt642ᚖint64(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ge"))
+			it.Ge, err = ec.unmarshalOInt642ᚖint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7607,7 +7607,7 @@ func (ec *executionContext) unmarshalInputStringFilter(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "leq", "geq", "in"}
+	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "le", "ge", "in"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7654,19 +7654,19 @@ func (ec *executionContext) unmarshalInputStringFilter(ctx context.Context, obj 
 			if err != nil {
 				return it, err
 			}
-		case "leq":
+		case "le":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leq"))
-			it.Leq, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("le"))
+			it.Le, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "geq":
+		case "ge":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("geq"))
-			it.Geq, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ge"))
+			it.Ge, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7783,7 +7783,7 @@ func (ec *executionContext) unmarshalInputTimeFilter(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "leq", "geq", "in"}
+	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "le", "ge", "in"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7830,19 +7830,19 @@ func (ec *executionContext) unmarshalInputTimeFilter(ctx context.Context, obj in
 			if err != nil {
 				return it, err
 			}
-		case "leq":
+		case "le":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leq"))
-			it.Leq, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("le"))
+			it.Le, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "geq":
+		case "ge":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("geq"))
-			it.Geq, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ge"))
+			it.Ge, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}

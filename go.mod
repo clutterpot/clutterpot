@@ -3,7 +3,7 @@ module github.com/clutterpot/clutterpot
 go 1.19
 
 require (
-	github.com/99designs/gqlgen v0.17.13
+	github.com/99designs/gqlgen v0.17.15
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/jwtauth/v5 v5.0.2
@@ -13,13 +13,13 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/joho/godotenv v1.4.0
-	github.com/lestrrat-go/jwx v1.2.6
+	github.com/lestrrat-go/jwx v1.2.25
 	github.com/lib/pq v1.10.6
 	github.com/rs/xid v1.4.0
 	github.com/stretchr/testify v1.8.0
-	github.com/vektah/gqlparser/v2 v2.4.6
+	github.com/vektah/gqlparser/v2 v2.4.8
 	github.com/vikstrous/dataloadgen v0.0.3
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
+	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8
 )
 
 require (
@@ -27,7 +27,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
-	github.com/goccy/go-json v0.7.6 // indirect
+	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -37,7 +37,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
-	github.com/lestrrat-go/httpcc v1.0.0 // indirect
+	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/iter v1.0.1 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.1 // indirect

@@ -6,18 +6,14 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
-type Filter interface {
-	GetConj() []sq.Sqlizer
-}
-
 type ScalarFilter[T any] struct {
 	And *ScalarFilter[T]
 	Or  *ScalarFilter[T]
 	Eq  *T
 	Lt  *T
 	Gt  *T
-	Leq *T
-	Geq *T
+	Le  *T
+	Ge  *T
 	In  []*T
 }
 
@@ -37,10 +33,10 @@ func (f *ScalarFilter[T]) GetConj(conj sq.And, column string) sq.And {
 		conj = append(conj, sq.Lt{column: *f.Lt})
 	} else if f.Gt != nil {
 		conj = append(conj, sq.Gt{column: *f.Gt})
-	} else if f.Leq != nil {
-		conj = append(conj, sq.LtOrEq{column: *f.Leq})
-	} else if f.Geq != nil {
-		conj = append(conj, sq.GtOrEq{column: *f.Geq})
+	} else if f.Le != nil {
+		conj = append(conj, sq.LtOrEq{column: *f.Le})
+	} else if f.Ge != nil {
+		conj = append(conj, sq.GtOrEq{column: *f.Ge})
 	} else if f.In != nil {
 		conj = append(conj, sq.Eq{column: f.In})
 	}
