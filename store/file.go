@@ -174,6 +174,6 @@ func (fs *fileStore) GetByID(id string) (*model.File, error) {
 	return &f, nil
 }
 
-func (fs *fileStore) GetAll(after, before *string, first, last *int, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {
-	return getAll[model.File](fs.db, sq.Select("*").From("files"), "files", after, before, first, last, string(*sort), *order)
+func (fs *fileStore) GetAll(after, before *string, first, last *int, filter *model.FileFilter, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {
+	return getAll[model.File](fs.db, sq.Select("*").From("files").Where(filter.GetConj()), "files", after, before, first, last, string(*sort), *order)
 }

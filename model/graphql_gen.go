@@ -16,6 +16,29 @@ type DeleteFilePayload struct {
 	DeletedAt time.Time `json:"deletedAt"`
 }
 
+type FileFilter struct {
+	// And
+	And *FileFilter `json:"and"`
+	// Or
+	Or *FileFilter `json:"or"`
+	// File ID filter
+	ID *ScalarFilter[string] `json:"id"`
+	// Filename filter
+	Filename *ScalarFilter[string] `json:"filename"`
+	// File [mime type](https://www.iana.org/assignments/media-types/media-types.xhtml) filter
+	MimeType *ScalarFilter[string] `json:"mimeType"`
+	// File extension filter
+	Extension *ScalarFilter[string] `json:"extension"`
+	// File size filter
+	Size *ScalarFilter[int64] `json:"size"`
+	// Time of creation filter
+	CreatedAt *ScalarFilter[time.Time] `json:"createdAt"`
+	// Time of last update filter
+	UpdatedAt *ScalarFilter[time.Time] `json:"updatedAt"`
+	// Time of deletion filter
+	DeletedAt *ScalarFilter[time.Time] `json:"deletedAt"`
+}
+
 type LoginPayload struct {
 	// Access token
 	AccessToken string `json:"accessToken"`
@@ -44,6 +67,17 @@ type RevokeRefreshTokenPayload struct {
 	RefreshToken string `json:"refreshToken"`
 	// Time of deletion
 	DeletedAt time.Time `json:"deletedAt"`
+}
+
+type TagFilter struct {
+	// And
+	And *TagFilter `json:"and"`
+	// Or
+	Or *TagFilter `json:"or"`
+	// Tag ID filter
+	ID *ScalarFilter[string] `json:"id"`
+	// Name filter
+	Name *ScalarFilter[string] `json:"name"`
 }
 
 type UserFilter struct {

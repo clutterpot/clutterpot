@@ -33,6 +33,20 @@ input TagInput {
   private: Boolean! = false
 }
 
+input TagFilter {
+  "And"
+  and: TagFilter
+
+  "Or"
+  or: TagFilter
+
+  "Tag ID filter"
+  id: IDFilter
+
+  "Name filter"
+  name: StringFilter
+}
+
 enum TagSort {
   CREATED
   UPDATED

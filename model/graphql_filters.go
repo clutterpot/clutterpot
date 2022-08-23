@@ -24,6 +24,7 @@ type ScalarFilter[T any] struct {
 type StringFilter = ScalarFilter[string]
 type IDFilter = ScalarFilter[string]
 type TimeFilter = ScalarFilter[time.Time]
+type Int64Filter = ScalarFilter[int64]
 
 func (f *ScalarFilter[T]) GetConj(conj sq.And, column string) sq.And {
 	if f == nil {

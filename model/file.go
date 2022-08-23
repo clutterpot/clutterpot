@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	sq "github.com/Masterminds/squirrel"
+)
 
 type File struct {
 	ID        string     `json:"id" db:"id"`
@@ -19,6 +23,28 @@ func (f File) GetID() string { return f.ID }
 
 type FileConnection = Connection[File]
 type FileEdge = Edge[File]
+
+func (f *FileFilter) GetConj() sq.And {
+	var conj sq.And
+
+	conj = f.ID.GetConj(conj, "id")
+	conj = f.Filename.GetConj(conj, "filename")
+	conj = f.MimeType.GetConj(conj, "mime_type")
+	conj = f.Extension.GetConj(conj, "extension")
+	conj = f.Size.GetConj(conj, "size")
+	conj = f.CreatedAt.GetConj(conj, "created_at")
+	conj = f.UpdatedAt.GetConj(conj, "updated_at")
+	conj = f.DeletedAt.GetConj(conj, "deleted_at")
+
+	if f.And != nil {
+		conj = append(conj, f.And.GetConj()...)
+	}
+	if f.Or != nil {
+		conj = sq.And{sq.Or{conj, f.Or.GetConj()}}
+	}
+
+	return conj
+}
 
 type FileSort string
 

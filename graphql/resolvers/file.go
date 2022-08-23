@@ -14,8 +14,8 @@ func (r *queryResolver) File(ctx context.Context, id string) (*model.File, error
 	return r.Store.File.GetByID(id)
 }
 
-func (r *queryResolver) Files(ctx context.Context, after, before *string, first, last *int, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {
-	return r.Store.File.GetAll(after, before, first, last, sort, order)
+func (r *queryResolver) Files(ctx context.Context, after, before *string, first, last *int, filter *model.FileFilter, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {
+	return r.Store.File.GetAll(after, before, first, last, filter, sort, order)
 }
 
 // Mutation resolvers

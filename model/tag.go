@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	sq "github.com/Masterminds/squirrel"
+)
 
 type Tag struct {
 	ID        string     `json:"id" db:"id" `
@@ -16,6 +20,22 @@ func (t Tag) GetID() string { return t.ID }
 
 type TagConnection = Connection[Tag]
 type TagEdge = Edge[Tag]
+
+func (t *TagFilter) GetConj() sq.And {
+	var conj sq.And
+
+	conj = t.ID.GetConj(conj, "id")
+	conj = t.Name.GetConj(conj, "name")
+
+	if t.And != nil {
+		conj = append(conj, t.And.GetConj()...)
+	}
+	if t.Or != nil {
+		conj = sq.And{sq.Or{conj, t.Or.GetConj()}}
+	}
+
+	return conj
+}
 
 type TagSort string
 

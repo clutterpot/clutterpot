@@ -105,9 +105,9 @@ type ComplexityRoot struct {
 
 	Query struct {
 		File  func(childComplexity int, id string) int
-		Files func(childComplexity int, after *string, before *string, first *int, last *int, sort *model.FileSort, order *model.Order) int
+		Files func(childComplexity int, after *string, before *string, first *int, last *int, filter *model.FileFilter, sort *model.FileSort, order *model.Order) int
 		Tag   func(childComplexity int, id string) int
-		Tags  func(childComplexity int, after *string, before *string, first *int, last *int, sort *model.TagSort, order *model.Order) int
+		Tags  func(childComplexity int, after *string, before *string, first *int, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) int
 		User  func(childComplexity int, id string) int
 		Users func(childComplexity int, after *string, before *string, first *int, last *int, filter *model.UserFilter, sort *model.UserSort, order *model.Order) int
 	}
@@ -185,9 +185,9 @@ type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
 	Users(ctx context.Context, after *string, before *string, first *int, last *int, filter *model.UserFilter, sort *model.UserSort, order *model.Order) (*model.Connection[model.User], error)
 	File(ctx context.Context, id string) (*model.File, error)
-	Files(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.FileSort, order *model.Order) (*model.Connection[model.File], error)
+	Files(ctx context.Context, after *string, before *string, first *int, last *int, filter *model.FileFilter, sort *model.FileSort, order *model.Order) (*model.Connection[model.File], error)
 	Tag(ctx context.Context, id string) (*model.Tag, error)
-	Tags(ctx context.Context, after *string, before *string, first *int, last *int, sort *model.TagSort, order *model.Order) (*model.Connection[model.Tag], error)
+	Tags(ctx context.Context, after *string, before *string, first *int, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) (*model.Connection[model.Tag], error)
 }
 type RemoveTagsFromFilePayloadResolver interface {
 	File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error)
@@ -512,7 +512,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Files(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["sort"].(*model.FileSort), args["order"].(*model.Order)), true
+		return e.complexity.Query.Files(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["filter"].(*model.FileFilter), args["sort"].(*model.FileSort), args["order"].(*model.Order)), true
 
 	case "Query.tag":
 		if e.complexity.Query.Tag == nil {
@@ -536,7 +536,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tags(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["sort"].(*model.TagSort), args["order"].(*model.Order)), true
+		return e.complexity.Query.Tags(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["filter"].(*model.TagFilter), args["sort"].(*model.TagSort), args["order"].(*model.Order)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -752,10 +752,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputFileFilter,
 		ec.unmarshalInputFileInput,
 		ec.unmarshalInputFileUpdateInput,
 		ec.unmarshalInputIDFilter,
+		ec.unmarshalInputInt64Filter,
 		ec.unmarshalInputStringFilter,
+		ec.unmarshalInputTagFilter,
 		ec.unmarshalInputTagInput,
 		ec.unmarshalInputTimeFilter,
 		ec.unmarshalInputUserFilter,
@@ -915,6 +918,38 @@ input FileUpdateInput {
   tags: [ID!]
 }
 
+input FileFilter {
+  "And"
+  and: FileFilter
+
+  "Or"
+  or: FileFilter
+
+  "File ID filter"
+  id: IDFilter
+
+  "Filename filter"
+  filename: StringFilter
+
+  "File [mime type](https://www.iana.org/assignments/media-types/media-types.xhtml) filter"
+  mimeType: StringFilter
+
+  "File extension filter"
+  extension: StringFilter
+
+  "File size filter"
+  size: Int64Filter
+
+  "Time of creation filter"
+  createdAt: TimeFilter
+
+  "Time of last update filter"
+  updatedAt: TimeFilter
+
+  "Time of deletion filter"
+  deletedAt: TimeFilter
+}
+
 type DeleteFilePayload {
   "Unique file ID"
   id: ID!
@@ -1000,6 +1035,32 @@ input TimeFilter {
 
   "In"
   in: [Time]
+}
+
+input Int64Filter {
+  "And"
+  and: Int64Filter
+
+  "Or"
+  or: Int64Filter
+
+  "Equal"
+  eq: Int64
+
+  "Less than"
+  lt: Int64
+
+  "Grater than"
+  gt: Int64
+
+  "Less equal"
+  leq: Int64
+
+  "Greater equal"
+  geq: Int64
+
+  "In"
+  in: [Int64]
 }
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
@@ -1088,6 +1149,7 @@ input TimeFilter {
     before: String
     first: Int
     last: Int
+    filter: FileFilter
     sort: FileSort = CREATED
     order: Order = DESC
   ): FileConnection
@@ -1103,6 +1165,7 @@ input TimeFilter {
     before: String
     first: Int
     last: Int
+    filter: TagFilter
     sort: TagSort = CREATED
     order: Order = DESC
   ): TagConnection
@@ -1165,6 +1228,20 @@ input TagInput {
 
   "Determines whether tag will be accessible for other users"
   private: Boolean! = false
+}
+
+input TagFilter {
+  "And"
+  and: TagFilter
+
+  "Or"
+  or: TagFilter
+
+  "Tag ID filter"
+  id: IDFilter
+
+  "Name filter"
+  name: StringFilter
 }
 
 enum TagSort {
@@ -1604,24 +1681,33 @@ func (ec *executionContext) field_Query_files_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["last"] = arg3
-	var arg4 *model.FileSort
+	var arg4 *model.FileFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg4, err = ec.unmarshalOFileFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg4
+	var arg5 *model.FileSort
 	if tmp, ok := rawArgs["sort"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
-		arg4, err = ec.unmarshalOFileSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileSort(ctx, tmp)
+		arg5, err = ec.unmarshalOFileSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileSort(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["sort"] = arg4
-	var arg5 *model.Order
+	args["sort"] = arg5
+	var arg6 *model.Order
 	if tmp, ok := rawArgs["order"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
-		arg5, err = ec.unmarshalOOrder2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐOrder(ctx, tmp)
+		arg6, err = ec.unmarshalOOrder2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐOrder(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["order"] = arg5
+	args["order"] = arg6
 	return args, nil
 }
 
@@ -1679,24 +1765,33 @@ func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["last"] = arg3
-	var arg4 *model.TagSort
+	var arg4 *model.TagFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg4, err = ec.unmarshalOTagFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg4
+	var arg5 *model.TagSort
 	if tmp, ok := rawArgs["sort"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
-		arg4, err = ec.unmarshalOTagSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagSort(ctx, tmp)
+		arg5, err = ec.unmarshalOTagSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagSort(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["sort"] = arg4
-	var arg5 *model.Order
+	args["sort"] = arg5
+	var arg6 *model.Order
 	if tmp, ok := rawArgs["order"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
-		arg5, err = ec.unmarshalOOrder2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐOrder(ctx, tmp)
+		arg6, err = ec.unmarshalOOrder2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐOrder(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["order"] = arg5
+	args["order"] = arg6
 	return args, nil
 }
 
@@ -3905,7 +4000,7 @@ func (ec *executionContext) _Query_files(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Files(rctx, fc.Args["after"].(*string), fc.Args["before"].(*string), fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["sort"].(*model.FileSort), fc.Args["order"].(*model.Order))
+		return ec.resolvers.Query().Files(rctx, fc.Args["after"].(*string), fc.Args["before"].(*string), fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["filter"].(*model.FileFilter), fc.Args["sort"].(*model.FileSort), fc.Args["order"].(*model.Order))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4023,7 +4118,7 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Tags(rctx, fc.Args["after"].(*string), fc.Args["before"].(*string), fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["sort"].(*model.TagSort), fc.Args["order"].(*model.Order))
+		return ec.resolvers.Query().Tags(rctx, fc.Args["after"].(*string), fc.Args["before"].(*string), fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["filter"].(*model.TagFilter), fc.Args["sort"].(*model.TagSort), fc.Args["order"].(*model.Order))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7197,6 +7292,106 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputFileFilter(ctx context.Context, obj interface{}) (model.FileFilter, error) {
+	var it model.FileFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"and", "or", "id", "filename", "mimeType", "extension", "size", "createdAt", "updatedAt", "deletedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOFileFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOFileFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalOIDFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "filename":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filename"))
+			it.Filename, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "mimeType":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mimeType"))
+			it.MimeType, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "extension":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extension"))
+			it.Extension, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "size":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("size"))
+			it.Size, err = ec.unmarshalOInt64Filter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "createdAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			it.CreatedAt, err = ec.unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "updatedAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
+			it.UpdatedAt, err = ec.unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "deletedAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deletedAt"))
+			it.DeletedAt, err = ec.unmarshalOTimeFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputFileInput(ctx context.Context, obj interface{}) (model.FileInput, error) {
 	var it model.FileInput
 	asMap := map[string]interface{}{}
@@ -7321,6 +7516,90 @@ func (ec *executionContext) unmarshalInputIDFilter(ctx context.Context, obj inte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInt64Filter(ctx context.Context, obj interface{}) (model.ScalarFilter[int64], error) {
+	var it model.ScalarFilter[int64]
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"and", "or", "eq", "lt", "gt", "leq", "geq", "in"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOInt64Filter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOInt64Filter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "eq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eq"))
+			it.Eq, err = ec.unmarshalOInt642ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lt"))
+			it.Lt, err = ec.unmarshalOInt642ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "gt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gt"))
+			it.Gt, err = ec.unmarshalOInt642ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "leq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leq"))
+			it.Leq, err = ec.unmarshalOInt642ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "geq":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("geq"))
+			it.Geq, err = ec.unmarshalOInt642ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "in":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
+			it.In, err = ec.unmarshalOInt642ᚕᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputStringFilter(ctx context.Context, obj interface{}) (model.ScalarFilter[string], error) {
 	var it model.ScalarFilter[string]
 	asMap := map[string]interface{}{}
@@ -7396,6 +7675,58 @@ func (ec *executionContext) unmarshalInputStringFilter(ctx context.Context, obj 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
 			it.In, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTagFilter(ctx context.Context, obj interface{}) (model.TagFilter, error) {
+	var it model.TagFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"and", "or", "id", "name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "and":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			it.And, err = ec.unmarshalOTagFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "or":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			it.Or, err = ec.unmarshalOTagFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalOIDFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOStringFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9646,6 +9977,14 @@ func (ec *executionContext) marshalOFileEdge2ᚖgithubᚗcomᚋclutterpotᚋclut
 	return ec._FileEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOFileFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileFilter(ctx context.Context, v interface{}) (*model.FileFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputFileFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOFileSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐFileSort(ctx context.Context, v interface{}) (*model.FileSort, error) {
 	if v == nil {
 		return nil, nil
@@ -9782,6 +10121,62 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOInt642ᚕᚖint64(ctx context.Context, v interface{}) ([]*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*int64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOInt642ᚖint64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInt642ᚕᚖint64(ctx context.Context, sel ast.SelectionSet, v []*int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOInt642ᚖint64(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInt642ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt64(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt642ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt64(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt64Filter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐScalarFilter(ctx context.Context, v interface{}) (*model.ScalarFilter[int64], error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputInt64Filter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOLoginPayload2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐLoginPayload(ctx context.Context, sel ast.SelectionSet, v *model.LoginPayload) graphql.Marshaler {
@@ -10032,6 +10427,14 @@ func (ec *executionContext) marshalOTagEdge2ᚖgithubᚗcomᚋclutterpotᚋclutt
 		return graphql.Null
 	}
 	return ec._TagEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTagFilter2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagFilter(ctx context.Context, v interface{}) (*model.TagFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTagFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOTagSort2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagSort(ctx context.Context, v interface{}) (*model.TagSort, error) {

@@ -26,6 +26,7 @@ type Query {
     before: String
     first: Int
     last: Int
+    filter: FileFilter
     sort: FileSort = CREATED
     order: Order = DESC
   ): FileConnection
@@ -41,6 +42,7 @@ type Query {
     before: String
     first: Int
     last: Int
+    filter: TagFilter
     sort: TagSort = CREATED
     order: Order = DESC
   ): TagConnection

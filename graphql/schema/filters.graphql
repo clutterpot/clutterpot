@@ -63,3 +63,29 @@ input TimeFilter {
   "In"
   in: [Time]
 }
+
+input Int64Filter {
+  "And"
+  and: Int64Filter
+
+  "Or"
+  or: Int64Filter
+
+  "Equal"
+  eq: Int64
+
+  "Less than"
+  lt: Int64
+
+  "Grater than"
+  gt: Int64
+
+  "Less equal"
+  leq: Int64
+
+  "Greater equal"
+  geq: Int64
+
+  "In"
+  in: [Int64]
+}

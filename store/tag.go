@@ -69,8 +69,8 @@ func (ts *tagStore) GetByID(id, ownerID string) (*model.Tag, error) {
 	return &t, nil
 }
 
-func (ts *tagStore) GetAll(ownerID string, after, before *string, first, last *int, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
-	return getAll[model.Tag](ts.db, sq.Select("*").From("tags").Where(sq.Or{
+func (ts *tagStore) GetAll(ownerID string, after, before *string, first, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
+	return getAll[model.Tag](ts.db, sq.Select("*").From("tags").Where(filter.GetConj()).Where(sq.Or{
 		sq.Eq{"owner_id": ownerID},
 		sq.Eq{"owner_id": nil},
 	}), "tags", after, before, first, last, string(*sort), *order)

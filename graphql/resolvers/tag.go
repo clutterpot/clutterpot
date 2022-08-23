@@ -20,14 +20,14 @@ func (r *queryResolver) Tag(ctx context.Context, id string) (*model.Tag, error) 
 	return r.Store.Tag.GetByID(id, ownerID)
 }
 
-func (r *queryResolver) Tags(ctx context.Context, after, before *string, first, last *int, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
+func (r *queryResolver) Tags(ctx context.Context, after, before *string, first, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
 	var ownerID string
 	_, claims, err := jwtauth.FromContext(ctx)
 	if err == nil {
 		ownerID = claims["uid"].(string)
 	}
 
-	return r.Store.Tag.GetAll(ownerID, after, before, first, last, sort, order)
+	return r.Store.Tag.GetAll(ownerID, after, before, first, last, filter, sort, order)
 }
 
 // Mutation resolvers

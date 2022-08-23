@@ -62,6 +62,38 @@ input FileUpdateInput {
   tags: [ID!]
 }
 
+input FileFilter {
+  "And"
+  and: FileFilter
+
+  "Or"
+  or: FileFilter
+
+  "File ID filter"
+  id: IDFilter
+
+  "Filename filter"
+  filename: StringFilter
+
+  "File [mime type](https://www.iana.org/assignments/media-types/media-types.xhtml) filter"
+  mimeType: StringFilter
+
+  "File extension filter"
+  extension: StringFilter
+
+  "File size filter"
+  size: Int64Filter
+
+  "Time of creation filter"
+  createdAt: TimeFilter
+
+  "Time of last update filter"
+  updatedAt: TimeFilter
+
+  "Time of deletion filter"
+  deletedAt: TimeFilter
+}
+
 type DeleteFilePayload {
   "Unique file ID"
   id: ID!
