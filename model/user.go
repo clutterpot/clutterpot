@@ -31,6 +31,10 @@ type UserKindFilter = ScalarFilter[UserKind]
 func (u *UserFilter) GetConj() sq.And {
 	var conj sq.And
 
+	if u == nil {
+		return conj
+	}
+
 	conj = u.ID.GetConj(conj, "id")
 	conj = u.Username.GetConj(conj, "username")
 	conj = u.Email.GetConj(conj, "email")

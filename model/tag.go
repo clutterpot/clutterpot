@@ -24,6 +24,10 @@ type TagEdge = Edge[Tag]
 func (t *TagFilter) GetConj() sq.And {
 	var conj sq.And
 
+	if t == nil {
+		return conj
+	}
+
 	conj = t.ID.GetConj(conj, "id")
 	conj = t.Name.GetConj(conj, "name")
 

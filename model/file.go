@@ -27,6 +27,10 @@ type FileEdge = Edge[File]
 func (f *FileFilter) GetConj() sq.And {
 	var conj sq.And
 
+	if f == nil {
+		return conj
+	}
+
 	conj = f.ID.GetConj(conj, "id")
 	conj = f.Filename.GetConj(conj, "filename")
 	conj = f.MimeType.GetConj(conj, "mime_type")
