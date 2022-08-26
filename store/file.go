@@ -177,3 +177,22 @@ func (fs *fileStore) GetByID(id string) (*model.File, error) {
 func (fs *fileStore) GetAll(after, before *string, first, last *int, filter *model.FileFilter, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {
 	return getAll[model.File](fs.db, sq.Select("*").From("files").Where(filter.GetConj()), "files", after, before, first, last, string(*sort), *order)
 }
+
+func (fs *fileStore) GetAllByIDs(ids []string) ([]*model.File, []error) {
+	query, args, err := sq.Select("*").From("files").
+		Where(sq.And{sq.Eq{"id": ids}, sq.Eq{"deleted_at": nil}}).PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, []error{fmt.Errorf("an error occurred while getting all files by ids")}
+	}
+
+	var f []*model.File
+	if err := fs.db.Select(&f, query, args...); err != nil || len(f) == 0 {
+		if len(f) == 0 {
+			return nil, []error{fmt.Errorf("files not found")}
+		}
+
+		return nil, []error{fmt.Errorf("an error occurred while getting all files by ids")}
+	}
+
+	return f, nil
+}

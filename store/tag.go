@@ -74,6 +74,30 @@ func (ts *tagStore) GetAll(ownerID string, after, before *string, first, last *i
 		Where(sq.Or{sq.Eq{"owner_id": ownerID}, sq.Eq{"owner_id": nil}}), "tags", after, before, first, last, string(*sort), *order)
 }
 
+func (ts *tagStore) GetAllByIDs(ids []string, ownerID string) ([]*model.Tag, []error) {
+	query, args, err := sq.Select("*").From("tags").
+		Where(sq.And{
+			sq.Eq{"id": ids},
+			sq.Or{
+				sq.Eq{"owner_id": ownerID},
+				sq.Eq{"owner_id": nil},
+			}}).PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, []error{fmt.Errorf("an error occurred while getting all tags by ids")}
+	}
+
+	var t []*model.Tag
+	if err := ts.db.Select(&t, query, args...); err != nil || len(t) == 0 {
+		if len(t) == 0 {
+			return nil, []error{fmt.Errorf("tags not found")}
+		}
+
+		return nil, []error{fmt.Errorf("an error occurred while getting all tags by ids")}
+	}
+
+	return t, nil
+}
+
 func (ts *tagStore) GetAllByFileIDs(fileIDs []string, ownerID string, after, before *string, first, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) ([]*model.TagConnection, []error) {
 	return getAllByKeys[model.Tag, model.FileTag](
 		ts.db,

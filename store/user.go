@@ -143,7 +143,11 @@ func (us *userStore) GetAllByIDs(ids []string) ([]*model.User, []error) {
 	}
 
 	var u []*model.User
-	if err := us.db.Select(&u, query, args...); err != nil {
+	if err := us.db.Select(&u, query, args...); err != nil || len(u) == 0 {
+		if len(u) == 0 {
+			return nil, []error{fmt.Errorf("users not found")}
+		}
+
 		return nil, []error{fmt.Errorf("an error occurred while getting all users by ids")}
 	}
 

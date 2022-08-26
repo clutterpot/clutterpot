@@ -12,7 +12,7 @@ import (
 // Query resolvers
 
 func (r *queryResolver) File(ctx context.Context, id string) (*model.File, error) {
-	return r.Store.File.GetByID(id)
+	return dataloaders.ForContext(ctx).File.GetByID().Load(id)
 }
 
 func (r *queryResolver) Files(ctx context.Context, after, before *string, first, last *int, filter *model.FileFilter, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {
@@ -60,11 +60,11 @@ func (r *fileResolver) Tags(ctx context.Context, obj *model.File, after, before 
 		ownerID = claims["uid"].(string)
 	}
 
-	return dataloaders.ForContext(ctx).File.Tags(&ctx, ownerID, after, before, first, last, filter, sort, order).Load(obj.ID)
+	return dataloaders.ForContext(ctx).Tag.GetAllByFileID(&ctx, ownerID, after, before, first, last, filter, sort, order).Load(obj.ID)
 }
 
 // RemoveTagsFromFilePayload resolvers
 
 func (r *removeTagsFromFilePayloadResolver) File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error) {
-	return r.Store.File.GetByID(obj.FileID)
+	return dataloaders.ForContext(ctx).File.GetByID().Load(obj.FileID)
 }

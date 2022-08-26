@@ -19,7 +19,7 @@ func (r *queryResolver) Tag(ctx context.Context, id string) (*model.Tag, error) 
 		ownerID = claims["uid"].(string)
 	}
 
-	return r.Store.Tag.GetByID(id, ownerID)
+	return dataloaders.ForContext(ctx).Tag.GetByID(ownerID).Load(id)
 }
 
 func (r *queryResolver) Tags(ctx context.Context, after, before *string, first, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
@@ -53,5 +53,5 @@ func (r *tagResolver) Owner(ctx context.Context, obj *model.Tag) (*model.User, e
 		return nil, nil
 	}
 
-	return dataloaders.ForContext(ctx).Tag.Owner().Load(*obj.OwnerID)
+	return dataloaders.ForContext(ctx).User.GetByID().Load(*obj.OwnerID)
 }

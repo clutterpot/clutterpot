@@ -13,12 +13,14 @@ type contextKey struct {
 var DataloaderKey = contextKey{"dataloader"}
 
 type Dataloader struct {
+	User *userLoader
 	File *fileLoader
 	Tag  *tagLoader
 }
 
 func New(store *store.Store) *Dataloader {
 	return &Dataloader{
+		User: newUserLoader(store),
 		File: newFileLoader(store),
 		Tag:  newTagLoader(store),
 	}
