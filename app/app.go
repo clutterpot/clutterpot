@@ -34,6 +34,7 @@ func (app *App) Init() *App {
 
 func (app *App) Run() {
 	app.migrateDB()
+	app.registerMiddlewares()
 	app.registerHandlers()
 	app.serveHTTP()
 }

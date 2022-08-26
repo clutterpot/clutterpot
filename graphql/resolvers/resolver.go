@@ -4,7 +4,7 @@ package resolvers
 
 import (
 	"github.com/clutterpot/clutterpot/auth"
-	"github.com/clutterpot/clutterpot/graphql/dataloaders"
+	"github.com/clutterpot/clutterpot/dataloaders"
 	"github.com/clutterpot/clutterpot/graphql/server"
 	"github.com/clutterpot/clutterpot/store"
 	"github.com/clutterpot/clutterpot/validator"

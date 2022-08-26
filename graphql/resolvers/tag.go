@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/clutterpot/clutterpot/auth"
 	"github.com/clutterpot/clutterpot/model"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -34,7 +35,7 @@ func (r *queryResolver) Tags(ctx context.Context, after, before *string, first, 
 
 func (r *mutationResolver) CreateTag(ctx context.Context, input model.TagInput) (*model.Tag, error) {
 	if input.Private {
-		input.OwnerID = &r.Auth.ForContext(ctx).UserID
+		input.OwnerID = &auth.ForContext(ctx).UserID
 	}
 
 	return r.Store.Tag.Create(input)

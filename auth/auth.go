@@ -40,7 +40,7 @@ func (a *Auth) Decode(token string) (jwt.Token, map[string]any, error) {
 
 }
 
-func (a *Auth) ForContext(ctx context.Context) *Claims {
+func ForContext(ctx context.Context) *Claims {
 	// Already validated in directive
 	_, claims, _ := jwtauth.FromContext(ctx)
 

@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/clutterpot/clutterpot/auth"
 	"github.com/clutterpot/clutterpot/model"
 )
 
@@ -32,7 +33,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id *string, input mod
 	}
 	if id == nil {
 		// Get user id from access token claims
-		id = &r.Auth.ForContext(ctx).UserID
+		id = &auth.ForContext(ctx).UserID
 	}
 
 	return r.Store.User.Update(*id, input)

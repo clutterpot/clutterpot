@@ -8,25 +8,28 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
-func PaginateQuery(query sq.SelectBuilder, after, before *string, first, last *int, sort string, order model.Order) (string, []interface{}, error) {
+func PaginateQuery(query sq.SelectBuilder, after, before *string, first, last *int, sort string, order model.Order) (sq.SelectBuilder, error) {
 	query, err := setAfterAndBefore(query, after, before, order)
 	if err != nil {
-		return "", nil, err
+		return query, err
 	}
 	query, err = setLimitSortAndOrder(query, first, last, sort, string(order))
 	if err != nil {
-		return "", nil, err
+		return query, err
 	}
 
-	return query.PlaceholderFormat(sq.Dollar).ToSql()
+	return query, nil
 }
 
-func GetPageInfoQuery(query sq.SelectBuilder, startID, endID string, order model.Order) (string, []interface{}, error) {
-	return sq.Select("count(*) != 0").From("q").Prefix("WITH q AS (?) (", query).
-		Where(flipGt(sq.Gt{"id": startID}, order == model.OrderAsc)).Limit(1).Suffix(
-		") UNION ALL (?)", sq.Select("count(*) != 0").From("q").
-			Where(flipLt(sq.Lt{"id": endID}, order == model.OrderAsc)).Limit(1),
-	).PlaceholderFormat(sq.Dollar).ToSql()
+func GetPageInfoQuery(query sq.SelectBuilder, startID, endID []string, order model.Order) sq.SelectBuilder {
+	return query.Prefix("WITH q AS (").SuffixExpr(sq.Expr("), r AS (?), s AS (?) ?, LATERAL (?) b UNION ALL ?, LATERAL (?) b",
+		sq.Select("id").From("q").Where(sq.Eq{"id": startID}),
+		sq.Select("id").From("q").Where(sq.Eq{"id": endID}),
+		sq.Select("b.*").From("r ra"),
+		sq.Select("count(*) != 0").From("q").Where(fmt.Sprintf("id %s ra.id", flipGt(order == model.OrderAsc))).Limit(1),
+		sq.Select("b.*").From("s sa"),
+		sq.Select("count(*) != 0").From("q").Where(fmt.Sprintf("id %s sa.id", flipLt(order == model.OrderAsc))).Limit(1),
+	)).PlaceholderFormat(sq.Dollar)
 }
 
 func setAfterAndBefore(query sq.SelectBuilder, after, before *string, order model.Order) (sq.SelectBuilder, error) {
@@ -35,14 +38,14 @@ func setAfterAndBefore(query sq.SelectBuilder, after, before *string, order mode
 		if err != nil {
 			return query, fmt.Errorf("invalid 'after' cursor")
 		}
-		query = query.Where(flipLt(sq.Lt{"id": id}, order == model.OrderAsc))
+		query = query.Where(fmt.Sprintf("id %s ?", flipLt(order == model.OrderAsc)), id)
 	}
 	if before != nil {
 		id, err := decodeCursor(*before)
 		if err != nil {
 			return query, fmt.Errorf("invalid 'before' cursor")
 		}
-		query = query.Where(flipGt(sq.Gt{"id": id}, order == model.OrderAsc))
+		query = query.Where(fmt.Sprintf("id %s ?", flipGt(order == model.OrderAsc)), id)
 	}
 
 	return query, nil
@@ -74,18 +77,18 @@ func flipOrder(order string) string {
 	return "ASC"
 }
 
-func flipLt(operator sq.Lt, flip bool) any {
+func flipLt(flip bool) string {
 	if flip {
-		return sq.Gt{"id": operator["id"]}
+		return ">"
 	}
 
-	return operator
+	return "<"
 }
 
-func flipGt(operator sq.Gt, flip bool) any {
+func flipGt(flip bool) string {
 	if flip {
-		return sq.Lt{"id": operator["id"]}
+		return "<"
 	}
 
-	return operator
+	return ">"
 }

@@ -70,10 +70,16 @@ func (ts *tagStore) GetByID(id, ownerID string) (*model.Tag, error) {
 }
 
 func (ts *tagStore) GetAll(ownerID string, after, before *string, first, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
-	return getAll[model.Tag](ts.db, sq.Select("*").From("tags").Where(filter.GetConj()).Where(sq.Or{
-		sq.Eq{"owner_id": ownerID},
-		sq.Eq{"owner_id": nil},
-	}), "tags", after, before, first, last, string(*sort), *order)
+	return getAll[model.Tag](ts.db, sq.Select("*").From("tags").Where(filter.GetConj()).
+		Where(sq.Or{sq.Eq{"owner_id": ownerID}, sq.Eq{"owner_id": nil}}), "tags", after, before, first, last, string(*sort), *order)
+}
+
+func (ts *tagStore) GetAllByFileIDs(fileIDs []string, ownerID string, after, before *string, first, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) ([]*model.TagConnection, []error) {
+	return getAllByKeys[model.Tag, model.FileTag](
+		ts.db,
+		sq.Select("file_id, t.*").From("file_tags ft").Where(sq.Eq{"ft.file_id": fileIDs}),
+		sq.Select("*").From("tags").Where(sq.Or{sq.Eq{"owner_id": ownerID}, sq.Eq{"owner_id": nil}}).Where(filter.GetConj()),
+		"JOIN LATERAL (?) t ON ft.tag_id = t.id", "file tags", fileIDs, after, before, first, last, string(*sort), *order)
 }
 
 func (ts *tagStore) GetByFileIDs(fileIDs []string) (tags [][]*model.Tag, errs []error) {

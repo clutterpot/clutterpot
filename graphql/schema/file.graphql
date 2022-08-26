@@ -15,7 +15,15 @@ type File implements Node {
   size: Int64!
 
   "File tags"
-  tags: [Tag!]
+  tags(
+    after: String
+    before: String
+    first: Int
+    last: Int
+    filter: TagFilter
+    sort: TagSort = CREATED
+    order: Order = DESC
+  ): TagConnection
 
   "Time of creation"
   createdAt: Time!

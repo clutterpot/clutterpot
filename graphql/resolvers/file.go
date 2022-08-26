@@ -3,8 +3,10 @@ package resolvers
 import (
 	"context"
 
+	"github.com/clutterpot/clutterpot/dataloaders"
 	"github.com/clutterpot/clutterpot/model"
 
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -52,8 +54,14 @@ func (r *mutationResolver) RemoveTagsFromFile(ctx context.Context, id string, ta
 
 // File resolvers
 
-func (r *fileResolver) Tags(ctx context.Context, obj *model.File) ([]*model.Tag, error) {
-	return r.Dataloader.File.Tags.Load(obj.ID)
+func (r *fileResolver) Tags(ctx context.Context, obj *model.File, after, before *string, first, last *int, filter *model.TagFilter, sort *model.TagSort, order *model.Order) (*model.TagConnection, error) {
+	var ownerID string
+	_, claims, err := jwtauth.FromContext(ctx)
+	if err == nil {
+		ownerID = claims["uid"].(string)
+	}
+
+	return dataloaders.ForContext(ctx).File.Tags(&ctx, ownerID, after, before, first, last, filter, sort, order).Load(obj.ID)
 }
 
 // RemoveTagsFromFilePayload resolvers

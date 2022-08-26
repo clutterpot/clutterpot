@@ -6,9 +6,7 @@ import (
 	"os"
 
 	"github.com/clutterpot/clutterpot/handlers"
-
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/jwtauth/v5"
+	"github.com/clutterpot/clutterpot/middlewares"
 )
 
 func (app *App) serveHTTP() {
@@ -23,10 +21,11 @@ func (app *App) serveHTTP() {
 	}
 }
 
-func (app *App) registerHandlers() {
-	app.http.Use(middleware.Logger)
-	app.http.Use(jwtauth.Verifier(app.auth.JWT()))
+func (app *App) registerMiddlewares() {
+	app.http.Use(middlewares.New(app.store, app.auth)...)
+}
 
+func (app *App) registerHandlers() {
 	// GraphQL API
 	app.http.Mount("/", handlers.GQLHandler(app.auth, app.store, app.val))
 }
