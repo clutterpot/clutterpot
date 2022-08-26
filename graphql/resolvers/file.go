@@ -12,7 +12,7 @@ import (
 // Query resolvers
 
 func (r *queryResolver) File(ctx context.Context, id string) (*model.File, error) {
-	return dataloaders.ForContext(ctx).File.GetByID().Load(id)
+	return r.Store.File.GetByID(id)
 }
 
 func (r *queryResolver) Files(ctx context.Context, after, before *string, first, last *int, filter *model.FileFilter, sort *model.FileSort, order *model.Order) (*model.FileConnection, error) {

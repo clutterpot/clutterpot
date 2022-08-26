@@ -4,14 +4,13 @@ import (
 	"context"
 
 	"github.com/clutterpot/clutterpot/auth"
-	"github.com/clutterpot/clutterpot/dataloaders"
 	"github.com/clutterpot/clutterpot/model"
 )
 
 // Query resolvers
 
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	return dataloaders.ForContext(ctx).User.GetByID().Load(id)
+	return r.Store.User.GetByID(id)
 }
 
 func (r *queryResolver) Users(ctx context.Context, after, before *string, first, last *int, filter *model.UserFilter, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {

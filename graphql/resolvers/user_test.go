@@ -8,6 +8,7 @@ import (
 	"github.com/clutterpot/clutterpot/db"
 	"github.com/clutterpot/clutterpot/graphql/directives"
 	"github.com/clutterpot/clutterpot/graphql/server"
+	"github.com/clutterpot/clutterpot/middlewares"
 	"github.com/clutterpot/clutterpot/model"
 	"github.com/clutterpot/clutterpot/store"
 	"github.com/clutterpot/clutterpot/validator"
@@ -15,7 +16,6 @@ import (
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/jwtauth/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +27,7 @@ func TestUserResolvers(t *testing.T) {
 		Resolvers:  New(auth, store, validator.New()),
 		Directives: directives.New(),
 	}))
-	middlewares := chi.Middlewares{jwtauth.Verifier(auth.JWT())}
+	middlewares := chi.Chain(middlewares.New(store, auth)...)
 	gqlClient := client.New(middlewares.Handler(gqlServer))
 
 	t.Run("User", func(t *testing.T) { testUserResolvers_User(t, gqlClient, store) })
