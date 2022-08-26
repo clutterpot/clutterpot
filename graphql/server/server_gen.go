@@ -41,6 +41,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	RemoveTagsFromFilePayload() RemoveTagsFromFilePayloadResolver
+	Tag() TagResolver
 }
 
 type DirectiveRoot struct {
@@ -119,7 +120,6 @@ type ComplexityRoot struct {
 
 	RemoveTagsFromFilePayload struct {
 		File func(childComplexity int) int
-		Tags func(childComplexity int) int
 	}
 
 	RevokeRefreshTokenPayload struct {
@@ -128,8 +128,10 @@ type ComplexityRoot struct {
 	}
 
 	Tag struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
+		Global func(childComplexity int) int
+		ID     func(childComplexity int) int
+		Name   func(childComplexity int) int
+		Owner  func(childComplexity int) int
 	}
 
 	TagConnection struct {
@@ -191,7 +193,10 @@ type QueryResolver interface {
 }
 type RemoveTagsFromFilePayloadResolver interface {
 	File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error)
-	Tags(ctx context.Context, obj *model.RemoveTagsFromFilePayload) ([]*model.Tag, error)
+}
+type TagResolver interface {
+	Global(ctx context.Context, obj *model.Tag) (bool, error)
+	Owner(ctx context.Context, obj *model.Tag) (*model.User, error)
 }
 
 type executableSchema struct {
@@ -588,13 +593,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RemoveTagsFromFilePayload.File(childComplexity), true
 
-	case "RemoveTagsFromFilePayload.tags":
-		if e.complexity.RemoveTagsFromFilePayload.Tags == nil {
-			break
-		}
-
-		return e.complexity.RemoveTagsFromFilePayload.Tags(childComplexity), true
-
 	case "RevokeRefreshTokenPayload.deletedAt":
 		if e.complexity.RevokeRefreshTokenPayload.DeletedAt == nil {
 			break
@@ -609,6 +607,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RevokeRefreshTokenPayload.RefreshToken(childComplexity), true
 
+	case "Tag.global":
+		if e.complexity.Tag.Global == nil {
+			break
+		}
+
+		return e.complexity.Tag.Global(childComplexity), true
+
 	case "Tag.id":
 		if e.complexity.Tag.ID == nil {
 			break
@@ -622,6 +627,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tag.Name(childComplexity), true
+
+	case "Tag.owner":
+		if e.complexity.Tag.Owner == nil {
+			break
+		}
+
+		return e.complexity.Tag.Owner(childComplexity), true
 
 	case "TagConnection.edges":
 		if e.complexity.TagConnection.Edges == nil {
@@ -974,9 +986,6 @@ type DeleteFilePayload {
 type RemoveTagsFromFilePayload {
   "Updated file"
   file: File!
-
-  "Removed tags"
-  tags: [Tag!]!
 }
 
 enum FileSort {
@@ -1214,6 +1223,12 @@ scalar Int64
 
   "Unique tag name"
   name: String!
+
+  "Determines whether tag is global (accessible for all users)"
+  global: Boolean!
+
+  "Tag owner if tag is not private"
+  owner: User
 }
 
 type TagConnection {
@@ -1239,8 +1254,8 @@ input TagInput {
   "Tag name"
   name: String!
 
-  "Determines whether tag will be accessible for other users"
-  private: Boolean! = false
+  "Determines whether tag will be global (accessible for all users)"
+  global: Boolean! = true
 }
 
 input TagFilter {
@@ -3601,8 +3616,6 @@ func (ec *executionContext) fieldContext_Mutation_removeTagsFromFile(ctx context
 			switch field.Name {
 			case "file":
 				return ec.fieldContext_RemoveTagsFromFilePayload_file(ctx, field)
-			case "tags":
-				return ec.fieldContext_RemoveTagsFromFilePayload_tags(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RemoveTagsFromFilePayload", field.Name)
 		},
@@ -3691,6 +3704,10 @@ func (ec *executionContext) fieldContext_Mutation_createTag(ctx context.Context,
 				return ec.fieldContext_Tag_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Tag_name(ctx, field)
+			case "global":
+				return ec.fieldContext_Tag_global(ctx, field)
+			case "owner":
+				return ec.fieldContext_Tag_owner(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -4181,6 +4198,10 @@ func (ec *executionContext) fieldContext_Query_tag(ctx context.Context, field gr
 				return ec.fieldContext_Tag_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Tag_name(ctx, field)
+			case "global":
+				return ec.fieldContext_Tag_global(ctx, field)
+			case "owner":
+				return ec.fieldContext_Tag_owner(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -4540,56 +4561,6 @@ func (ec *executionContext) fieldContext_RemoveTagsFromFilePayload_file(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _RemoveTagsFromFilePayload_tags(ctx context.Context, field graphql.CollectedField, obj *model.RemoveTagsFromFilePayload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RemoveTagsFromFilePayload_tags(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RemoveTagsFromFilePayload().Tags(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Tag)
-	fc.Result = res
-	return ec.marshalNTag2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RemoveTagsFromFilePayload_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RemoveTagsFromFilePayload",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tag_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Tag_name(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _RevokeRefreshTokenPayload_refreshToken(ctx context.Context, field graphql.CollectedField, obj *model.RevokeRefreshTokenPayload) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RevokeRefreshTokenPayload_refreshToken(ctx, field)
 	if err != nil {
@@ -4766,6 +4737,109 @@ func (ec *executionContext) fieldContext_Tag_name(ctx context.Context, field gra
 	return fc, nil
 }
 
+func (ec *executionContext) _Tag_global(ctx context.Context, field graphql.CollectedField, obj *model.Tag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tag_global(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Tag().Global(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tag_global(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tag",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tag_owner(ctx context.Context, field graphql.CollectedField, obj *model.Tag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tag_owner(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Tag().Owner(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tag_owner(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tag",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "kind":
+				return ec.fieldContext_User_kind(ctx, field)
+			case "displayName":
+				return ec.fieldContext_User_displayName(ctx, field)
+			case "bio":
+				return ec.fieldContext_User_bio(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TagConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.Connection[model.Tag]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TagConnection_edges(ctx, field)
 	if err != nil {
@@ -4853,6 +4927,10 @@ func (ec *executionContext) fieldContext_TagConnection_nodes(ctx context.Context
 				return ec.fieldContext_Tag_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Tag_name(ctx, field)
+			case "global":
+				return ec.fieldContext_Tag_global(ctx, field)
+			case "owner":
+				return ec.fieldContext_Tag_owner(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -4998,6 +5076,10 @@ func (ec *executionContext) fieldContext_TagEdge_node(ctx context.Context, field
 				return ec.fieldContext_Tag_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Tag_name(ctx, field)
+			case "global":
+				return ec.fieldContext_Tag_global(ctx, field)
+			case "owner":
+				return ec.fieldContext_Tag_owner(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -7838,11 +7920,11 @@ func (ec *executionContext) unmarshalInputTagInput(ctx context.Context, obj inte
 		asMap[k] = v
 	}
 
-	if _, present := asMap["private"]; !present {
-		asMap["private"] = false
+	if _, present := asMap["global"]; !present {
+		asMap["global"] = true
 	}
 
-	fieldsInOrder := [...]string{"name", "private"}
+	fieldsInOrder := [...]string{"name", "global"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7857,11 +7939,11 @@ func (ec *executionContext) unmarshalInputTagInput(ctx context.Context, obj inte
 			if err != nil {
 				return it, err
 			}
-		case "private":
+		case "global":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("private"))
-			it.Private, err = ec.unmarshalNBoolean2bool(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("global"))
+			it.Global, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8837,26 +8919,6 @@ func (ec *executionContext) _RemoveTagsFromFilePayload(ctx context.Context, sel 
 				return innerFunc(ctx)
 
 			})
-		case "tags":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._RemoveTagsFromFilePayload_tags(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8918,15 +8980,52 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._Tag_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 
 			out.Values[i] = ec._Tag_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "global":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tag_global(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "owner":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tag_owner(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9587,60 +9686,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Tag) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTag(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTag(ctx context.Context, sel ast.SelectionSet, v *model.Tag) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Tag(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTagInput2githubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTagInput(ctx context.Context, v interface{}) (model.TagInput, error) {

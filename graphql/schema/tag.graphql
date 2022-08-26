@@ -4,6 +4,12 @@ type Tag implements Node {
 
   "Unique tag name"
   name: String!
+
+  "Determines whether tag is global (accessible for all users)"
+  global: Boolean!
+
+  "Tag owner if tag is not private"
+  owner: User
 }
 
 type TagConnection {
@@ -29,8 +35,8 @@ input TagInput {
   "Tag name"
   name: String!
 
-  "Determines whether tag will be accessible for other users"
-  private: Boolean! = false
+  "Determines whether tag will be global (accessible for all users)"
+  global: Boolean! = true
 }
 
 input TagFilter {

@@ -33,6 +33,10 @@ type fileResolver struct{ *Resolver }
 
 func (r *Resolver) File() server.FileResolver { return &fileResolver{r} }
 
+type tagResolver struct{ *Resolver }
+
+func (r *Resolver) Tag() server.TagResolver { return &tagResolver{r} }
+
 type removeTagsFromFilePayloadResolver struct{ *Resolver }
 
 func (r *Resolver) RemoveTagsFromFilePayload() server.RemoveTagsFromFilePayloadResolver {

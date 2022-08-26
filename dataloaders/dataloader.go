@@ -14,11 +14,13 @@ var DataloaderKey = contextKey{"dataloader"}
 
 type Dataloader struct {
 	File *fileLoader
+	Tag  *tagLoader
 }
 
 func New(store *store.Store) *Dataloader {
 	return &Dataloader{
 		File: newFileLoader(store),
+		Tag:  newTagLoader(store),
 	}
 }
 

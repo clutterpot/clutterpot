@@ -7,7 +7,6 @@ import (
 	"github.com/clutterpot/clutterpot/model"
 
 	"github.com/go-chi/jwtauth/v5"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // Query resolvers
@@ -68,8 +67,4 @@ func (r *fileResolver) Tags(ctx context.Context, obj *model.File, after, before 
 
 func (r *removeTagsFromFilePayloadResolver) File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error) {
 	return r.Store.File.GetByID(obj.FileID)
-}
-
-func (r *removeTagsFromFilePayloadResolver) Tags(ctx context.Context, obj *model.RemoveTagsFromFilePayload) ([]*model.Tag, error) {
-	return nil, gqlerror.Errorf("not implemented")
 }

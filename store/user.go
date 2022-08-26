@@ -134,3 +134,18 @@ func (us *userStore) GetByEmail(email string) (*model.User, error) {
 func (us *userStore) GetAll(after, before *string, first, last *int, filter *model.UserFilter, sort *model.UserSort, order *model.Order) (*model.UserConnection, error) {
 	return getAll[model.User](us.db, sq.Select("*").From("users").Where(filter.GetConj()), "users", after, before, first, last, string(*sort), *order)
 }
+
+func (us *userStore) GetAllByIDs(ids []string) ([]*model.User, []error) {
+	query, args, err := sq.Select("*").
+		From("users").Where(sq.Eq{"id": ids}).PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, []error{fmt.Errorf("an error occurred while getting all users by ids")}
+	}
+
+	var u []*model.User
+	if err := us.db.Select(&u, query, args...); err != nil {
+		return nil, []error{fmt.Errorf("an error occurred while getting all users by ids")}
+	}
+
+	return u, nil
+}
