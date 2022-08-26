@@ -81,29 +81,3 @@ func (ts *tagStore) GetAllByFileIDs(fileIDs []string, ownerID string, after, bef
 		sq.Select("*").From("tags").Where(sq.Or{sq.Eq{"owner_id": ownerID}, sq.Eq{"owner_id": nil}}).Where(filter.GetConj()),
 		"JOIN LATERAL (?) t ON ft.tag_id = t.id", "file tags", fileIDs, after, before, first, last, string(*sort), *order)
 }
-
-func (ts *tagStore) GetByFileIDs(fileIDs []string) (tags [][]*model.Tag, errs []error) {
-	query, args, err := sq.Select("file_id", "id", "name").From("file_tags ft").
-		LeftJoin("tags t ON ft.tag_id = t.id").Where(sq.Eq{"file_id": fileIDs}).
-		PlaceholderFormat(sq.Dollar).ToSql()
-	if err != nil {
-		return nil, []error{fmt.Errorf("an error occurred while getting file tags")}
-	}
-
-	var fts []*model.FileTag
-	if err := ts.db.Select(&fts, query, args...); err != nil {
-		return nil, []error{fmt.Errorf("an error occurred while getting file tags")}
-	}
-
-	t := make(map[string][]*model.Tag)
-	for _, ft := range fts {
-		t[ft.FileID] = append(t[ft.FileID], &ft.Tag)
-	}
-
-	tags = make([][]*model.Tag, len(fileIDs))
-	for i, id := range fileIDs {
-		tags[i] = t[id]
-	}
-
-	return tags, nil
-}
