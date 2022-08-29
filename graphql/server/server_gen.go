@@ -120,6 +120,7 @@ type ComplexityRoot struct {
 
 	RemoveTagsFromFilePayload struct {
 		File func(childComplexity int) int
+		Tags func(childComplexity int) int
 	}
 
 	RevokeRefreshTokenPayload struct {
@@ -193,6 +194,7 @@ type QueryResolver interface {
 }
 type RemoveTagsFromFilePayloadResolver interface {
 	File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error)
+	Tags(ctx context.Context, obj *model.RemoveTagsFromFilePayload) ([]*model.Tag, error)
 }
 type TagResolver interface {
 	Global(ctx context.Context, obj *model.Tag) (bool, error)
@@ -593,6 +595,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RemoveTagsFromFilePayload.File(childComplexity), true
 
+	case "RemoveTagsFromFilePayload.tags":
+		if e.complexity.RemoveTagsFromFilePayload.Tags == nil {
+			break
+		}
+
+		return e.complexity.RemoveTagsFromFilePayload.Tags(childComplexity), true
+
 	case "RevokeRefreshTokenPayload.deletedAt":
 		if e.complexity.RevokeRefreshTokenPayload.DeletedAt == nil {
 			break
@@ -986,6 +995,9 @@ type DeleteFilePayload {
 type RemoveTagsFromFilePayload {
   "Updated file"
   file: File!
+
+  "Deleted tags"
+  tags: [Tag]
 }
 
 enum FileSort {
@@ -3616,6 +3628,8 @@ func (ec *executionContext) fieldContext_Mutation_removeTagsFromFile(ctx context
 			switch field.Name {
 			case "file":
 				return ec.fieldContext_RemoveTagsFromFilePayload_file(ctx, field)
+			case "tags":
+				return ec.fieldContext_RemoveTagsFromFilePayload_tags(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RemoveTagsFromFilePayload", field.Name)
 		},
@@ -4556,6 +4570,57 @@ func (ec *executionContext) fieldContext_RemoveTagsFromFilePayload_file(ctx cont
 				return ec.fieldContext_File_deletedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type File", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoveTagsFromFilePayload_tags(ctx context.Context, field graphql.CollectedField, obj *model.RemoveTagsFromFilePayload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveTagsFromFilePayload_tags(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RemoveTagsFromFilePayload().Tags(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Tag)
+	fc.Result = res
+	return ec.marshalOTag2ᚕᚖgithubᚗcomᚋclutterpotᚋclutterpotᚋmodelᚐTag(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveTagsFromFilePayload_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveTagsFromFilePayload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tag_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tag_name(ctx, field)
+			case "global":
+				return ec.fieldContext_Tag_global(ctx, field)
+			case "owner":
+				return ec.fieldContext_Tag_owner(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
 	}
 	return fc, nil
@@ -8912,6 +8977,23 @@ func (ec *executionContext) _RemoveTagsFromFilePayload(ctx context.Context, sel 
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "tags":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RemoveTagsFromFilePayload_tags(ctx, field, obj)
 				return res
 			}
 

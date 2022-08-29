@@ -78,3 +78,5 @@ models:
     fields:
       file:
         resolver: true
+      tags:
+        resolver: true

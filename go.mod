@@ -3,7 +3,7 @@ module github.com/clutterpot/clutterpot
 go 1.19
 
 require (
-	github.com/99designs/gqlgen v0.17.15
+	github.com/99designs/gqlgen v0.17.16
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/jwtauth/v5 v5.0.2
@@ -17,9 +17,9 @@ require (
 	github.com/lib/pq v1.10.6
 	github.com/rs/xid v1.4.0
 	github.com/stretchr/testify v1.8.0
-	github.com/vektah/gqlparser/v2 v2.4.8
+	github.com/vektah/gqlparser/v2 v2.5.0
 	github.com/vikstrous/dataloadgen v0.0.3
-	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8
+	golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d
 )
 
 require (

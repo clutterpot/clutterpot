@@ -68,3 +68,18 @@ func (r *fileResolver) Tags(ctx context.Context, obj *model.File, after, before 
 func (r *removeTagsFromFilePayloadResolver) File(ctx context.Context, obj *model.RemoveTagsFromFilePayload) (*model.File, error) {
 	return dataloaders.ForContext(ctx).File.GetByID().Load(obj.FileID)
 }
+
+func (r *removeTagsFromFilePayloadResolver) Tags(ctx context.Context, obj *model.RemoveTagsFromFilePayload) ([]*model.Tag, error) {
+	var ownerID string
+	_, claims, err := jwtauth.FromContext(ctx)
+	if err == nil {
+		ownerID = claims["uid"].(string)
+	}
+
+	tags, errs := dataloaders.ForContext(ctx).Tag.GetByID(ownerID).LoadAll(obj.TagIDs)
+	if len(errs) > 0 {
+		return nil, errs[0]
+	}
+
+	return tags, nil
+}

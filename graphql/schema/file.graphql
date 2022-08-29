@@ -113,6 +113,9 @@ type DeleteFilePayload {
 type RemoveTagsFromFilePayload {
   "Updated file"
   file: File!
+
+  "Deleted tags"
+  tags: [Tag]
 }
 
 enum FileSort {

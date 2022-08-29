@@ -52,6 +52,8 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/99designs/gqlgen v0.17.15 h1:5YgNFd46NhO/VltM4ENc6m26mj8GJxQg2ZKOy5s83tA=
 github.com/99designs/gqlgen v0.17.15/go.mod h1:IXeS/mdPf7JPkmqvbRKjCAV+CLxMKe6vXw6yD9vamB8=
+github.com/99designs/gqlgen v0.17.16 h1:tTIw/cQ/uvf3iXIb2I6YSkdaDkmHmH2W2eZkVe0IVLA=
+github.com/99designs/gqlgen v0.17.16/go.mod h1:dnJdUkgfh8iw8CEx2hhTdgTQO/GvVWKLcm/kult5gwI=
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20210715213245-6c3934b029d8/go.mod h1:CzsSbkDixRphAF5hS6wbMKq0eI6ccJRb7/A0M6JBnwg=
 github.com/Azure/azure-pipeline-go v0.2.3/go.mod h1:x841ezTBIMG6O3lAcl8ATHnsOPVl2bqk7S3ta6S6u4k=
 github.com/Azure/azure-sdk-for-go v16.2.1+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
@@ -1129,6 +1131,8 @@ github.com/urfave/cli/v2 v2.8.1/go.mod h1:Z41J9TPoffeoqP0Iza0YbAhGvymRdZAd2uPmZ5
 github.com/vektah/dataloaden v0.3.0 h1:ZfVN2QD6swgvp+tDqdH/OIT/wu3Dhu0cus0k5gIZS84=
 github.com/vektah/gqlparser/v2 v2.4.8 h1:O0G2I4xEi7J0/b/qRCWGNXEiU9EQ+hGBmlIU1LXLUfY=
 github.com/vektah/gqlparser/v2 v2.4.8/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rtyIAFvd/MceW0=
+github.com/vektah/gqlparser/v2 v2.5.0 h1:GwEwy7AJsqPWrey0bHnn+3JLaHLZVT66wY/+O+Tf9SU=
+github.com/vektah/gqlparser/v2 v2.5.0/go.mod h1:mPgqFBu/woKTVYWyNk8cO3kh4S/f4aRFZrvOnp3hmCs=
 github.com/vikstrous/dataloadgen v0.0.3 h1:X6vhEAKut6NqkSt5WTsLeGK2tOgFMR8uCxrXiKK6rwo=
 github.com/vikstrous/dataloadgen v0.0.3/go.mod h1:Ju6Boet/YuPzAspBB4GvqPDe/qFTanj9jDSXhGdqjLQ=
 github.com/vishvananda/netlink v0.0.0-20181108222139-023a6dafdcdf/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
@@ -1249,6 +1253,8 @@ golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3/go.mod h1:IxCIyHEi3zRg3s0
 golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 h1:GIAS/yBem/gq2MUqgNIzUHW7cJMmx3TGZOrnyYaNQ6c=
 golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d h1:3qF+Z8Hkrw9sOhrFHti9TlB1Hkac1x+DNRkv0XQiFjo=
+golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/exp v0.0.0-20180321215751-8460e604b9de/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20180807140117-3d87b88a115f/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
